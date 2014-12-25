@@ -111,7 +111,7 @@ void* get_hash_var(const char *name, var_t **tab, int size){
 	k=hash_func(name);
 	index=find_hash(name,k,tab,size);
 	if(tab[index]==NULL || tab[index]==&deleted){
-		fprintf(stderr,"%s: Undefined variable.\n",name);
+		//fprintf(stderr,"%s: Undefined variable.\n",name);
 		return NULL;
 	}
 	return tab[index]->value;

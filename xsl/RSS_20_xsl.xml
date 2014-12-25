@@ -117,6 +117,7 @@
 				<xsl:apply-templates select="category" />
 			</categories>
 			<xsl:apply-templates select="pubDate | dc:date" />
+			<description/>
 			<content>
 				<xsl:choose>
 					<xsl:when test="content:encoded">
@@ -127,7 +128,6 @@
 					</xsl:otherwise>
 				</xsl:choose>
 			</content>
-			<xsl:apply-templates select="description" />
 		</entry>
 	</xsl:template>
 
