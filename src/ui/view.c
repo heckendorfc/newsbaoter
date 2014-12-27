@@ -128,7 +128,6 @@ void update_view(struct mainwindow *mw){
 }
 
 struct mainwindow* setup_ui(){
-	int num;
 	struct mainwindow *mw;
 
 	setlocale(LC_ALL,getenv("LC_ALL"));

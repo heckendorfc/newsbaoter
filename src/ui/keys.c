@@ -52,7 +52,6 @@ void unbind_key(int c){
 }
 
 int process_key(int c){
-	int i;
 	handler_t kh;
 	char s[17];
 

@@ -29,7 +29,6 @@ struct urllist* urlparse(){
 	int fd;
 	struct conf_read c;
 	struct taglist *tlp;
-	int i;
 
 	if((fd=open_config(file))<0){
 		fprintf(stderr,"No URL file found. Please configure ~/%s\n",NB_URL_FILE);

@@ -43,7 +43,6 @@ static int check_for_line(struct conf_read *c){
 
 /*TODO: ring buffer? */
 int read_config_line(int fd, struct conf_read *c){
-	int i;
 	int nr;
 
 	if(c->b_alloc<1){
