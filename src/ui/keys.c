@@ -13,6 +13,14 @@ int handle_exit(){
 	return KH_RET_EXIT;
 }
 
+int handle_next_item(){
+	return KH_RET_EXIT;
+}
+
+int handle_prev_item(){
+	return KH_RET_EXIT;
+}
+
 /* Defaults and Infrastructure */
 
 struct keylist{
@@ -32,6 +40,8 @@ struct handlerlist{
 
 static struct handlerlist handler_names[]={
 	KHF(exit),
+	KHF(next_item),
+	KHF(prev_item),
 	{NULL,NULL}
 };
 

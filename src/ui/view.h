@@ -11,6 +11,12 @@ enum viewtype{
 	NBVT_PAGER,
 };
 
+enum listcontext{
+	CTX_NULL,
+	CTX_FEEDS,
+	CTX_ENTRIES,
+};
+
 struct listview{
 	tchar_t *line;
 };
@@ -26,13 +32,16 @@ struct mainwindow{
 	int body_type;
 	int body_len;
 	int width;
+	int page;
+	int ctx_type;
+	int ctx_id;
 	union{
 		struct listview *lv;
 		struct pagerview *pv;
 	}data;
 };
 
-int chars_to_widechars(tchar_t *dst, char *src, int max);
+int chars_to_widechars(tchar_t *dst, const char *src, int max);
 void update_view(struct mainwindow *mw);
 struct mainwindow* setup_ui();
 void run_ui();

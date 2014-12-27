@@ -41,6 +41,8 @@
 		<xsd:sequence>
 			<xsd:choice maxOccurs="unbounded">
 				<xsd:element name="entryUniqueId" type="xsd:string" minOccurs="0" maxOccurs="1" />
+				<xsd:element name="publishDateTime" type="xsd:string" minOccurs="0" maxOccurs="1" />
+				<xsd:element name="lastUpdatedDateTime" type="xsd:string" minOccurs="0" maxOccurs="1" />
 				<xsd:element name="title" type="xsd:string" minOccurs="0" maxOccurs="1" />
 				<xsd:element name="url" type="xsd:string" minOccurs="0" maxOccurs="1" />
 				<xsd:element name="authorEmail" type="xsd:string" minOccurs="0" maxOccurs="1" />
@@ -60,8 +62,6 @@
                         </xsd:sequence>
                     </xsd:complexType>
                 </xsd:element>
-				<xsd:element name="publishDateTime" type="xsd:string" minOccurs="0" maxOccurs="1" />
-				<xsd:element name="lastUpdatedDateTime" type="xsd:string" minOccurs="0" maxOccurs="1" />
                 <xsd:element name="content" minOccurs="0" maxOccurs="1">
                     <xsd:complexType mixed="true">
                         <xsd:sequence minOccurs="0" maxOccurs="unbounded">

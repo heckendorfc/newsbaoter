@@ -103,11 +103,11 @@
 	<xsl:template match="atom:entry">
 		<entry>
 			<xsl:apply-templates select="atom:id" />
+			<xsl:apply-templates select="atom:issued | atom:published" />
+			<xsl:apply-templates select="atom:modified | atom:updated" />
 			<xsl:apply-templates select="atom:title" />
 			<xsl:apply-templates select="atom:link" />
 			<xsl:apply-templates select="atom:author" />
-			<xsl:apply-templates select="atom:issued | atom:published" />
-			<xsl:apply-templates select="atom:modified | atom:updated" />
             <categories>
                 <xsl:apply-templates select="atom:category" />
             </categories>

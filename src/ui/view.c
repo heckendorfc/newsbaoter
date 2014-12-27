@@ -96,8 +96,11 @@ void resize_mainwindow(struct mainwindow *mw){
 	}
 }
 
-int chars_to_widechars(tchar_t *dst, char *src, int max){
+int chars_to_widechars(tchar_t *dst, const char *src, int max){
 	int bn;
+
+	if(max<1)
+		return 0;
 
 	//int n=mbstowcs(NULL,src,0); // find wide length
 	bn=mbstowcs(dst,src,max);
@@ -150,9 +153,8 @@ struct mainwindow* setup_ui(){
 
 	bind_defaults();
 
-	move(1,2);
-	printw("egerge");
-	refresh();
+	mw->ctx_type=CTX_FEEDS;
+	mw->ctx_id=0;
 
 	return mw;
 }

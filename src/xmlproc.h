@@ -5,6 +5,8 @@
 #include <libxslt/xslt.h>
 #include <libxslt/transform.h>
 
+#include "ui/view.h"
+
 struct xmlproc_data{
 	xmlParserCtxtPtr ctx;
 	xmlDocPtr doc;
@@ -16,5 +18,6 @@ void xmlproc_free_doc(xmlDocPtr doc);
 void xmlproc_parse_block(struct xmlproc_data *h, char *buf, size_t n);
 void xmlproc_finish(struct xmlproc_data *h);
 void xmlproc_init(struct xmlproc_data *h);
+void xmlproc_gen_lines(void *uld, struct mainwindow *mw);
 
 #endif
