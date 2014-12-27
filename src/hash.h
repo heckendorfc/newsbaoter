@@ -16,4 +16,9 @@ void init_urltag_table();
 void* get_urltag(const char *name);
 void set_urltag(const char *name, void *value);
 
+void init_uikey_table();
+void* get_uikey(const char *name);
+void set_uikey(const char *name, void *value);
+void unset_uikey(const char *name);
+
 #endif

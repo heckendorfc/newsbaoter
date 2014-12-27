@@ -6,6 +6,11 @@
 static int urltag_tab_cap;
 static int urltag_tab_size;
 static var_t **urltag_tab;
+
+static int uikey_tab_cap;
+static int uikey_tab_size;
+static var_t **uikey_tab;
+
 static var_t deleted;
 
 uint32_t hash_func(const char *str){
@@ -135,16 +140,22 @@ void* get_urltag(const char *name){
 	return get_hash_var(name,urltag_tab,urltag_tab_size);
 }
 
-/*
-int is_alias(const char *name){
-	uint32_t k;
-	int index;
-
-	if(!name)return 0;
-
-	k=hash(name);
-	index=find_urltag(name,k,alias_tab,alias_tab_size);
-
-	return (alias_tab[index]==NULL || alias_tab[index]==&deleted)?0:1;
+void init_uikey_table(){
+	int i;
+	INIT_MEM(uikey_tab,INITIAL_LOCTAB_SIZE);
+	uikey_tab_size=INITIAL_LOCTAB_SIZE;
+	uikey_tab_cap=0;
+	for(i=0;i<uikey_tab_size;i++)uikey_tab[i]=NULL;
 }
-*/
+
+void set_uikey(const char *name, void *value){
+	set_hash_var(name,value,uikey_tab,&uikey_tab_size,&uikey_tab_cap);
+}
+
+void unset_uikey(const char *name){
+	unset_hash_var(name,uikey_tab,&uikey_tab_size,&uikey_tab_cap);
+}
+
+void* get_uikey(const char *name){
+	return get_hash_var(name,uikey_tab,uikey_tab_size);
+}

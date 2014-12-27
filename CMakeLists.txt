@@ -18,16 +18,19 @@ add_definitions(-DPACKAGE_VERSION="0.1")
 add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share" )
 add_definitions(-DLIB_PATH="${INSTALL_LIBDIR}" )
 
+set(CURSES_USE_NCURSES TRUE)
+
 find_package (LibXslt REQUIRED)
 find_package (LibXml2 REQUIRED)
 find_package (Threads REQUIRED)
 find_package (CURL REQUIRED)
+find_package (CursesW REQUIRED)
 #find_package(Sqlite REQUIRED)
 #include_directories(${SQLITE_INCLUDE_DIR})
 
 add_definitions(${LIBXML2_DEFINITIONS} ${LIBXSLT_DEFINITIONS})
-include_directories(${LIBXSLT_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${CURL_INCLUDE_DIRS})
-set(NBLIBS ${CURL_LIBRARIES} ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES})
+include_directories(sftl ${LIBXSLT_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${CURL_INCLUDE_DIRS} ${CURSESW_INCLUDE_DIR})
+set(NBLIBS ${CURL_LIBRARIES} ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CURSESW_LIBRARIES})
 
 add_executable (newsbaoter src/newsbaoter.c
 src/config.c
@@ -35,7 +38,10 @@ src/hash.c
 src/urlparse.c
 src/xmlproc.c
 src/httpfetch.c
+src/ui/view.c
+src/ui/keys.c
 )
+#src/ui/utf8.c
 
 target_link_libraries (newsbaoter ${CMAKE_THREAD_LIBS_INIT} ${NBLIBS})
 
