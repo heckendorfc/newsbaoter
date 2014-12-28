@@ -14,9 +14,9 @@ if (NOT DEFINED INSTALL_LIBDIR)
 	set(INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif ()
 
-add_definitions(-DPACKAGE_VERSION="0.1")
-add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share" )
-add_definitions(-DLIB_PATH="${INSTALL_LIBDIR}" )
+add_definitions(-DNB_VERS_S="0.1")
+#add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share" )
+#add_definitions(-DLIB_PATH="${INSTALL_LIBDIR}" )
 
 set(CURSES_USE_NCURSES TRUE)
 

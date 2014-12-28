@@ -13,10 +13,20 @@
 #include "util.h"
 #include "../common_defs.h"
 
+#ifndef NB_VERS_S
+#define NB_VERS_S "A.B"
+#endif
+
+#define TITL_HEIGHT 1
+#define TITL_WIDTH 18
+#define TITL_STRING "newsbaoter v" NB_VERS_S " | "
+#define TITL_TGAP 0
+#define TITL_LGAP 0
+
 #define HEAD_HEIGHT 1
-#define HEAD_WIDTH COLS
+#define HEAD_WIDTH (COLS-TITL_WIDTH)
 #define HEAD_TGAP 0
-#define HEAD_LGAP 0
+#define HEAD_LGAP TITL_WIDTH
 
 #define FOOT_HEIGHT 1
 #define FOOT_WIDTH COLS
@@ -29,7 +39,7 @@
 #define BODY_TGAP 1
 #define BODY_LGAP 0
 
-static WINDOW *head_w=NULL,*foot_w=NULL,**body_w=NULL;
+static WINDOW *titl_w=NULL,*head_w=NULL,*foot_w=NULL,**body_w=NULL;
 static int bw_len=0;
 static int content_bw_max=0;
 static int cursor_i=0;
@@ -65,14 +75,9 @@ int select_item(struct mainwindow *mw){
 		wattron(body_w[cursor_i],A_BOLD);
 	}
 	else if(mw->ctx_type==CTX_ENTRIES){
-		int tmp_type=mw->ctx_type;
-		int tmp_id=mw->ctx_id;
-		//mw->ctx_type=CTX_ENTRY;
-		//mw->ctx_id=(mw->page*mw->body_len)+cursor_i;
+		int tmp_id;
 		tmp_id=(mw->page*mw->body_len)+cursor_i;
 		pipe_entry(mw,tmp_id);
-		//mw->ctx_type=tmp_type;
-		//mw->ctx_id=tmp_id;
 	}
 	return KH_RET_UPDATE;
 }
@@ -96,6 +101,7 @@ void clear_display(){
 	refresh();
 	return;
 
+	wrefresh(titl_w);
 	wrefresh(head_w);
 	wrefresh(foot_w);
 	for(i=0;i<bw_len;i++)
@@ -105,6 +111,8 @@ void clear_display(){
 void regen_windows(){
 	int i;
 
+	if(titl_w)
+		delwin(titl_w);
 	if(head_w)
 		delwin(head_w);
 	if(foot_w)
@@ -116,6 +124,9 @@ void regen_windows(){
 
 	bw_len=BODY_HEIGHT;
 	REINIT_MEM(body_w,bw_len);
+
+	titl_w=newwin(TITL_HEIGHT,TITL_WIDTH,TITL_TGAP,TITL_LGAP);
+	wrefresh(titl_w);
 
 	head_w=newwin(HEAD_HEIGHT,HEAD_WIDTH,HEAD_TGAP,HEAD_LGAP);
 	wrefresh(head_w);
@@ -180,6 +191,8 @@ void update_view(struct mainwindow *mw){
 		clear_display();
 	}
 
+	mvwaddstr(titl_w,0,0,TITL_STRING);
+	wrefresh(titl_w);
 	print_crop(head_w,mw->header,mw->width);
 	print_crop(foot_w,mw->footer,mw->width);
 	for(i=0;i<mw->body_len;i++){

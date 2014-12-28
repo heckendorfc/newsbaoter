@@ -270,9 +270,31 @@ static int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, in
 	return r;
 }
 
+static void set_title_string(struct urllist *ul, struct mainwindow *mw, char *tail){
+	const int tlen=256;
+	char tmp[tlen];
+	const char *head="";
+	xmlNode *root = xmlDocGetRootElement(ul->data.doc);
+	xmlNode *node=find_xml_node(root->children,"title",XML_ELEMENT_NODE);
+
+	if(mw->ctx_type==CTX_FEEDS)
+		head="Your Feeds";
+	else if(node && node->children && node->children->content && node->children->content[0])
+		head=(const char*)node->children->content;
+
+	snprintf(tmp,tlen,"%s %s",head,tail);
+
+	chars_to_widechars(mw->header,tmp,mw->width);
+}
+
 void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 	int i,r;
+	const int tlen=256;
+	char tmp[tlen];
 	struct urllist *ul = get_urllist_start(uld,mw);
+
+	snprintf(tmp,tlen,"(Page %d)",mw->page+1);
+	set_title_string(ul,mw,tmp);
 
 	for(r=i=0;i<mw->body_len && ul && !r;i++){
 		r=write_line(mw->data.lv[i].line,mw->width,ul->data.doc,mw->ctx_type,mw->ctx_id,i);

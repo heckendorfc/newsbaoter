@@ -47,6 +47,7 @@ struct urllist* urlparse(){
 
 		LIST_ADD(urls,lptr);
 		urls->data.url=strdup(bp);
+		urls->data.doc=NULL;
 
 		while((bp=get_line_word(next,&next))){
 			tlp=get_urltag(bp);

@@ -72,7 +72,7 @@ int main(int argc, char **argv){
 	struct mainwindow *mw;
 	pthread_t ioth;
 	struct io_data iod;
-	char hs[]="newsbaoter v0.1 | Feed List";
+	char hs[]="Feed List";
 	char fs[]="press q to exit";
 
 	mw=setup_ui();
