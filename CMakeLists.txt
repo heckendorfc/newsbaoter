@@ -47,10 +47,10 @@ src/ui/util.c
 target_link_libraries (newsbaoter ${CMAKE_THREAD_LIBS_INIT} ${NBLIBS})
 
 #FILE(GLOB shared_files share/*)
-SET(shared_files share/defaults.conf share/create.sql)
+#SET(shared_files share/defaults.conf share/create.sql)
 SET(doc_files README)
 SET(man_files share/newsbaoter.1)
-INSTALL(FILES ${shared_files} DESTINATION share/newsbaoter)
+#INSTALL(FILES ${shared_files} DESTINATION share/newsbaoter)
 INSTALL(FILES ${man_files} DESTINATION ${INSTALL_MANPREFIX}/man/man1)
 INSTALL(FILES ${doc_files} DESTINATION share/doc/newsbaoter)
 INSTALL(TARGETS newsbaoter RUNTIME DESTINATION bin)
