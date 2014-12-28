@@ -17,7 +17,7 @@ static void run_multi_group(CURLM *cm){
 	struct timeval timeout;
 	int rc=0; /* select() return code */
 	CURLMcode mc; /* curl_multi_fdset() return code */
-	int rnp;
+	int rnp=0;
 
 	fd_set fdread;
 	fd_set fdwrite;
@@ -65,6 +65,10 @@ static void run_multi_group(CURLM *cm){
 	}while(rnp);
 }
 
+void http_init(){
+	curl_global_init(CURL_GLOBAL_ALL);
+}
+
 void fetch_urls(struct urllist *ul, const int npara){
 	CURL **ce;
 	CURLM *cm=curl_multi_init();
@@ -79,8 +83,6 @@ void fetch_urls(struct urllist *ul, const int npara){
 	INIT_MEM(xh,npara);
 	INIT_MEM(ce,npara);
 	INIT_MEM(ula,npara);
-
-	curl_global_init(CURL_GLOBAL_ALL);
 
 	tul=ul;
 	while(tul){
@@ -142,4 +144,8 @@ void fetch_urls(struct urllist *ul, const int npara){
 	}
 
 	curl_multi_cleanup(cm);
+
+	free(ula);
+	free(ce);
+	free(xh);
 }

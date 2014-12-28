@@ -30,6 +30,7 @@ typedef int ipcinfo;
 enum ipcinfo_val{
 	IPCVAL_UPDATE_REQUEST,
 	IPCVAL_WRITE_ENTRY,
+	IPCVAL_REFRESH_ALL,
 	IPCVAL_DONE,
 };
 

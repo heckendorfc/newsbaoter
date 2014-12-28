@@ -27,6 +27,10 @@ int handle_select(struct mainwindow *mw){
 	return select_item(mw);
 }
 
+int handle_refresh_all(struct mainwindow *mw){
+	return refresh_all(mw);
+}
+
 /* Defaults and Infrastructure */
 
 struct keylist{
@@ -40,6 +44,7 @@ static struct keylist default_keys[]={
 	{'k',KHN(prev)},
 	{KEY_ENTER,KHN(select)},
 	{'o',KHN(select)},
+	{'R',KHN(refresh_all)},
 	{'\0',NULL}
 };
 

@@ -13,7 +13,7 @@ struct io_data{
 	struct mainwindow *mw;
 };
 
-static void handle_ipc(struct io_data *iod, ipcinfo ii){
+static int handle_ipc(struct io_data *iod, ipcinfo ii){
 	if(ii==IPCVAL_UPDATE_REQUEST){
 		xmlproc_gen_lines(iod->ul,iod->mw);
 	}
@@ -25,8 +25,13 @@ static void handle_ipc(struct io_data *iod, ipcinfo ii){
 		xmlproc_write_entry(iod->ul,iod->mw,id,fd);
 		close(fd);
 	}
+	else if(ii==IPCVAL_REFRESH_ALL){
+		return 1;
+	}
 	ii=IPCVAL_DONE;
 	write(iod->mw->infd[1],&ii,sizeof(ii));
+
+	return 0;
 }
 
 void* iothread(void *data){
@@ -36,10 +41,13 @@ void* iothread(void *data){
 	struct timeval wait = { 0, 0 };
 	fd_set fdread;
 	int sret;
+	int iret;
 	int wait_time=30*60;
 
 	ul=urlparse();
 	iod->ul=ul;
+	http_init();
+
 	while(1){
 		fetch_urls(ul,5);
 
@@ -57,12 +65,12 @@ void* iothread(void *data){
 				if(FD_ISSET(iod->mw->outfd[0],&fdread)){
 					int rr=read(iod->mw->outfd[0],&ii,sizeof(ii));
 					if(rr>=0){
-						handle_ipc(iod,ii);
+						iret=handle_ipc(iod,ii);
 					}
 				}
 			}
-		}while(sret>0 && wait.tv_sec>0);
-		break; /* TODO: XXX: DELETE ME */
+		}while(sret>0 && !iret && wait.tv_sec>0);
+		//break; /* TODO: XXX: DELETE ME */
 	}
 
 	return (void*)0;

@@ -82,6 +82,15 @@ int select_item(struct mainwindow *mw){
 	return KH_RET_UPDATE;
 }
 
+int refresh_all(struct mainwindow *mw){
+	ipcinfo ii=IPCVAL_REFRESH_ALL;
+
+	write(mw->outfd[1],&ii,sizeof(ii));
+	mvwaddstr(foot_w,0,FOOT_WIDTH-21,"Refreshing Feeds");
+
+	return KH_RET_OK;
+}
+
 int context_exit(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS)
 		return KH_RET_EXIT;
@@ -160,6 +169,7 @@ void resize_mainwindow(struct mainwindow *mw){
 
 	for(i=0;i<mw->body_len;i++){
 		mw->data.lv[i].line=mw->body+(i*mw->width);
+		mw->data.lv[i].line[0]=0;
 	}
 }
 

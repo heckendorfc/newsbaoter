@@ -7,6 +7,7 @@ int next_item(struct mainwindow *mw);
 int prev_item(struct mainwindow *mw);
 int select_item(struct mainwindow *mw);
 int context_exit(struct mainwindow *mw);
+int refresh_all(struct mainwindow *mw);
 
 int chars_to_widechars(tchar_t *dst, const char *src, int max);
 void update_view(struct mainwindow *mw);

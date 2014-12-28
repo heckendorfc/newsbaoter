@@ -43,7 +43,7 @@ void xmlproc_free_doc(xmlDocPtr doc){
 char* get_spec_sheet(xmlDocPtr doc){
 	xmlNode *root = xmlDocGetRootElement(doc);
 
-	if(strcmp((const char*)root->name,"feed")==0){
+	if(root && root->name && strcmp((const char*)root->name,"feed")==0){
 		char *ret=ATOM10_XSL;
 		xmlChar *a=xmlGetProp(root,(xmlChar*)"version");
 		if(a){
@@ -53,7 +53,7 @@ char* get_spec_sheet(xmlDocPtr doc){
 		}
 		return ret;
 	}
-	else if(strcmp((const char*)root->name,"RDF")==0)
+	else if(root && root->name && strcmp((const char*)root->name,"RDF")==0)
 		return RDF_XSL;
 
 	return RSS_XSL;
@@ -250,7 +250,7 @@ static int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, in
 
 	line[0]=0;
 
-	if(root==NULL){
+	if(root==NULL || root->children==NULL){
 		return 1;
 	}
 
@@ -275,7 +275,12 @@ static void set_title_string(struct urllist *ul, struct mainwindow *mw, char *ta
 	char tmp[tlen];
 	const char *head="";
 	xmlNode *root = xmlDocGetRootElement(ul->data.doc);
-	xmlNode *node=find_xml_node(root->children,"title",XML_ELEMENT_NODE);
+	xmlNode *node;
+
+	if(root==NULL || root->children==NULL)
+		return;
+
+	node=find_xml_node(root->children,"title",XML_ELEMENT_NODE);
 
 	if(mw->ctx_type==CTX_FEEDS)
 		head="Your Feeds";
