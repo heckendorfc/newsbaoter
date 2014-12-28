@@ -93,15 +93,17 @@ void xmlproc_init(struct xmlproc_data *h){
 	memset(h,0,sizeof(*h));
 }
 
-void write_feeds_line(tchar_t *line, int len, xmlNode *root){
+int write_feeds_line(tchar_t *line, int len, xmlNode *root){
 	xmlNode *cur_node = NULL;
 
 	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
 		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"title")==0){
 			chars_to_widechars(line,(const char*)cur_node->children->content,len);
-			return;
+			return 0;
 		}
 	}
+
+	return 1;
 }
 
 int set_standard_time(tchar_t *line, int len, xmlChar *tstr){
@@ -114,7 +116,7 @@ int set_standard_time(tchar_t *line, int len, xmlChar *tstr){
 	return chars_to_widechars(line,tmp,len);
 }
 
-void write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
+int write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
 	xmlNode *cur_node = NULL;
 	int off=0;
 	int entid=0;
@@ -131,7 +133,7 @@ void write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
 	}
 
 	if(cur_node==NULL)
-		return;
+		return 1;
 
 	root=cur_node;
 
@@ -157,33 +159,41 @@ void write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
 			break;
 		}
 	}
+
+	return 0;
 }
 
-void write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int index){
+int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int index){
 	xmlNode *root = xmlDocGetRootElement(xd);
 	int off=0;
 	const size_t tsize=256;
 	char tmp[tsize];
+	int r;
 
 	line[0]=0;
 
 	if(root==NULL){
-		return;
+		return 1;
 	}
 
 	sprintf(tmp,"%3d  ",index+1);
 	off=chars_to_widechars(line,tmp,len);
 
 	if(type==CTX_ENTRIES){
-		write_entries_line(line+off,len-off,root,index);
+		r=write_entries_line(line+off,len-off,root,index);
 	}
 	else{
-		write_feeds_line(line+off,len-off,root);
+		r=write_feeds_line(line+off,len-off,root);
 	}
+
+	if(r)
+		line[0]=0;
+
+	return r;
 }
 
 void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
-	int i;
+	int i,r;
 	int sn=mw->page*mw->body_len;
 	struct urllist *ul = (struct urllist*)uld;
 
@@ -202,10 +212,12 @@ void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 		}
 	}
 
-	for(i=0;i<mw->body_len && ul;i++){
-		write_line(mw->data.lv[i].line,mw->width,ul->data.doc,mw->ctx_type,mw->ctx_id,i);
-		if(mw->ctx_type==CTX_FEEDS)
+	for(r=i=0;i<mw->body_len && ul && !r;i++){
+		r=write_line(mw->data.lv[i].line,mw->width,ul->data.doc,mw->ctx_type,mw->ctx_id,i);
+		if(mw->ctx_type==CTX_FEEDS){
 			ul=ul->next;
+			r=0;
+		}
 	}
 
 	for(;i<mw->body_len;i++)
