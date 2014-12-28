@@ -297,11 +297,14 @@ static void set_title_string(struct urllist *ul, struct mainwindow *mw, char *ta
 	chars_to_widechars(mw->header,tmp,mw->width);
 }
 
-void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
+int xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 	int i,r;
 	const int tlen=256;
 	char tmp[tlen];
 	struct urllist *ul = get_urllist_start(uld,mw);
+
+	if(ul==NULL)
+		return 1;
 
 	snprintf(tmp,tlen,"(Page %d)",mw->page+1);
 	set_title_string(ul,mw,tmp);
@@ -316,4 +319,6 @@ void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 
 	for(;i<mw->body_len;i++)
 		mw->data.lv[i].line[0]=0;
+
+	return 0;
 }

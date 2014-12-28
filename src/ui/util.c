@@ -67,12 +67,14 @@ int pipe_entry(struct mainwindow *mw, int id){
 	return 0;
 }
 
-void request_list_update(struct mainwindow *mw){
+int request_list_update(struct mainwindow *mw){
 	ipcinfo ii=IPCVAL_UPDATE_REQUEST;
 	write(mw->outfd[1],&ii,sizeof(ii));
 	read(mw->infd[0],&ii,sizeof(ii));
 	if(ii!=IPCVAL_DONE){
 		/* TODO: error? */
+		return 1;
 	}
+	return 0;
 }
 

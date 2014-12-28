@@ -1,4 +1,6 @@
 //#include <sqlite3.h>
+#include <sys/ioctl.h>
+#include <signal.h>
 #include <locale.h>
 #include <pthread.h>
 #include <ncurses.h>
@@ -51,7 +53,14 @@ int next_item(struct mainwindow *mw){
 	wattroff(body_w[cursor_i],A_BOLD);
 	if(cursor_i<content_bw_max)
 		cursor_i++;
-	/* TODO: pages */
+	else if(content_bw_max==mw->body_len-1){
+		cursor_i=0;
+		mw->page++;
+		if(request_list_update(mw)){ /* end of list; undo */
+			cursor_i=content_bw_max;
+			mw->page--;
+		}
+	}
 	wattron(body_w[cursor_i],A_BOLD);
 	return KH_RET_UPDATE;
 }
@@ -60,6 +69,11 @@ int prev_item(struct mainwindow *mw){
 	wattroff(body_w[cursor_i],A_BOLD);
 	if(cursor_i>0)
 		cursor_i--;
+	else if(mw->page>0){
+		mw->page--;
+		cursor_i=mw->body_len-1;
+		request_list_update(mw);
+	}
 	wattron(body_w[cursor_i],A_BOLD);
 	return KH_RET_UPDATE;
 }
@@ -193,13 +207,17 @@ static void print_crop(WINDOW *w, tchar_t *str, int max){
 
 void update_view(struct mainwindow *mw){
 	int i;
+
 	if(newsize){
+		struct winsize ws;
+		ioctl(0, TIOCGWINSZ, &ws);
+		resizeterm(ws.ws_row,ws.ws_col);
 		resize_mainwindow(mw);
 		newsize=0;
+		request_list_update(mw);
 	}
-	else{
-		clear_display();
-	}
+
+	clear_display();
 
 	mvwaddstr(titl_w,0,0,TITL_STRING);
 	wrefresh(titl_w);
@@ -212,10 +230,15 @@ void update_view(struct mainwindow *mw){
 	}
 }
 
+void catchresize(int sig){
+	newsize=1;
+}
+
 struct mainwindow* setup_ui(){
 	struct mainwindow *mw;
 
 	setlocale(LC_ALL,getenv("LC_ALL"));
+	signal(SIGWINCH,catchresize);
 
 	(void) initscr();      /* initialize the curses library */
 	keypad(stdscr, TRUE);  /* enable keyboard mapping */

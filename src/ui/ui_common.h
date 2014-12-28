@@ -32,6 +32,7 @@ enum ipcinfo_val{
 	IPCVAL_WRITE_ENTRY,
 	IPCVAL_REFRESH_ALL,
 	IPCVAL_DONE,
+	IPCVAL_EOL,
 };
 
 struct mainwindow{

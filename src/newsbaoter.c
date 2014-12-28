@@ -14,8 +14,10 @@ struct io_data{
 };
 
 static int handle_ipc(struct io_data *iod, ipcinfo ii){
+	int ret=IPCVAL_DONE;
 	if(ii==IPCVAL_UPDATE_REQUEST){
-		xmlproc_gen_lines(iod->ul,iod->mw);
+		if(xmlproc_gen_lines(iod->ul,iod->mw))
+			ret=IPCVAL_EOL;
 	}
 	else if(ii==IPCVAL_WRITE_ENTRY){
 		int fd;
@@ -28,7 +30,7 @@ static int handle_ipc(struct io_data *iod, ipcinfo ii){
 	else if(ii==IPCVAL_REFRESH_ALL){
 		return 1;
 	}
-	ii=IPCVAL_DONE;
+	ii=ret;
 	write(iod->mw->infd[1],&ii,sizeof(ii));
 
 	return 0;
@@ -69,8 +71,15 @@ void* iothread(void *data){
 					}
 				}
 			}
+			else if(sret==-1 && errno==EINTR){
+				sret=1;
+				continue;
+			}
 		}while(sret>0 && !iret && wait.tv_sec>0);
-		//break; /* TODO: XXX: DELETE ME */
+		if(sret<0){
+			fprintf(stderr,"Error in I/O select\n");
+			exit(3);
+		}
 	}
 
 	return (void*)0;
