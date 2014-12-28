@@ -95,9 +95,7 @@
 	</xsl:template>
 
 	<xsl:template match="atom:content">
-		<content>
-			<xsl:copy-of select="." />
-		</content>
+		<xsl:copy-of select="." />
 	</xsl:template>
 	
 	<xsl:template match="atom:summary">

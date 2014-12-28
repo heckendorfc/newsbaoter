@@ -1,3 +1,4 @@
+#include <unistd.h>
 #include <time.h>
 #include <string.h>
 #include <libxml/xmlmemory.h>
@@ -93,77 +94,154 @@ void xmlproc_init(struct xmlproc_data *h){
 	memset(h,0,sizeof(*h));
 }
 
-int write_feeds_line(tchar_t *line, int len, xmlNode *root){
+static xmlNode* find_xml_node(xmlNode *cur_node, char *name, int type){
+	for(;cur_node;cur_node=cur_node->next){
+		if(cur_node->type==type && strcmp((const char*)cur_node->name,name)==0)
+			return cur_node;
+	}
+	return NULL;
+}
+
+static struct urllist* get_urllist_start(struct urllist *ul, struct mainwindow *mw){
+	int sn=mw->page*mw->body_len;
+
+	/* skip down to the current page */
+	while(ul && sn){
+		sn--;
+		ul=ul->next;
+	}
+
+	if(mw->ctx_type==CTX_ENTRIES){
+		sn=mw->ctx_id;
+		/* skip down to the current id */
+		while(ul && sn){
+			sn--;
+			ul=ul->next;
+		}
+	}
+
+	return ul;
+}
+
+xmlNode* get_nth_entry(xmlNode *cur_node, int id){
+	int entid=0;
+
+	for(;cur_node;cur_node=cur_node->next){
+		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"entry")==0){
+			if(entid==id){
+				return cur_node;
+			}
+			entid++;
+		}
+	}
+
+	return NULL;
+}
+
+static void write_elem_if_avail(char *name, xmlNode *node, int fd){
+	node=find_xml_node(node,name,XML_ELEMENT_NODE);
+	if(node && node->children && node->children->content && node->children->content[0]){
+		const char *s = (const char*)node->children->content;
+		write(fd,name,strlen(name));
+		write(fd,": ",2);
+		write(fd,s,strlen(s));
+		write(fd,"\n",1);
+	}
+}
+
+static char entry_fields[][30]={
+	"title",
+	"publishDateTime",
+	"lastUpdatedDateTime",
+	"url",
+	"authorName",
+	"authorEmail",
+	"description",
+	"content",
+	"",
+};
+
+int xmlproc_write_entry(void *uld, struct mainwindow *mw, int id, int fd){
+	xmlNode *n;
+	struct urllist *ul=get_urllist_start(uld,mw);
+	xmlNode *r;
+	int i;
+
+	r=xmlDocGetRootElement(ul->data.doc);
+	n=r->children;
+
+	n=get_nth_entry(n,id);
+	if(n)
+		n=n->children;
+	else
+		return 1;
+
+	for(i=0;entry_fields[i][0];i++){
+		write_elem_if_avail(entry_fields[i],n,fd);
+	}
+
+	return 0;
+}
+
+static int write_feeds_line(tchar_t *line, int len, xmlNode *root){
 	xmlNode *cur_node = NULL;
 
-	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
-		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"title")==0){
-			chars_to_widechars(line,(const char*)cur_node->children->content,len);
-			return 0;
-		}
+	cur_node=find_xml_node(root->children,"title",XML_ELEMENT_NODE);
+	if(cur_node && cur_node->children){
+		chars_to_widechars(line,(const char*)cur_node->children->content,len);
+		return 0;
 	}
 
 	return 1;
 }
 
-int set_standard_time(tchar_t *line, int len, xmlChar *tstr){
+static int set_standard_time(tchar_t *line, int len, xmlChar *tstr){
 	const size_t tsize=256;
 	char tmp[tsize];
 	struct tm tp;
-	//strptime((const char*)cur_node->children->content,"%a, %d %b %y %T",&tp);
+
+	if(tstr==NULL){
+		return chars_to_widechars(line,"        ",len);
+	}
+
 	strptime((const char*)tstr,"%F %T",&tp);
 	strftime(tmp,tsize,"%d %b  ",&tp);
+
 	return chars_to_widechars(line,tmp,len);
 }
 
-int write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
+static int write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
 	xmlNode *cur_node = NULL;
 	int off=0;
-	int entid=0;
 
-	/*TODO: abstract node finding */
-
-	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
-		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"entry")==0){
-			if(entid==id){
-				break;
-			}
-			entid++;
-		}
-	}
+	cur_node=get_nth_entry(root->children,id);
 
 	if(cur_node==NULL)
 		return 1;
 
 	root=cur_node;
 
-	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
-		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"publishDateTime")==0){
+	cur_node=find_xml_node(root->children,"publishDateTime",XML_ELEMENT_NODE);
+	if(cur_node && cur_node->children){
+		off+=set_standard_time(line+off,len-off,cur_node->children->content);
+	}
+	else{
+		cur_node=find_xml_node(root->children,"lastUpdatedDateTime",XML_ELEMENT_NODE);
+		if(cur_node && cur_node->children)
 			off+=set_standard_time(line+off,len-off,cur_node->children->content);
-			break;
-		}
+		else
+			off+=set_standard_time(line+off,len-off,NULL);
 	}
 
-	if(cur_node==NULL){
-		for(cur_node=root->children;cur_node;cur_node=cur_node->next){
-			if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"lastUpdatedDateTime")==0){
-				off+=set_standard_time(line+off,len-off,cur_node->children->content);
-				break;
-			}
-		}
-	}
-
-	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
-		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"title")==0){
-			off+=chars_to_widechars(line+off,(const char *)cur_node->children->content,len-off);
-			break;
-		}
+	cur_node=find_xml_node(root->children,"title",XML_ELEMENT_NODE);
+	if(cur_node && cur_node->children){
+		off+=chars_to_widechars(line+off,(const char *)cur_node->children->content,len-off);
 	}
 
 	return 0;
 }
 
-int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int index){
+static int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int index){
 	xmlNode *root = xmlDocGetRootElement(xd);
 	int off=0;
 	const size_t tsize=256;
@@ -194,23 +272,7 @@ int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int index
 
 void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 	int i,r;
-	int sn=mw->page*mw->body_len;
-	struct urllist *ul = (struct urllist*)uld;
-
-	/* skip down to the current page */
-	while(ul && sn){
-		sn--;
-		ul=ul->next;
-	}
-
-	if(mw->ctx_type==CTX_ENTRIES){
-		sn=mw->ctx_id;
-		/* skip down to the current id */
-		while(ul && sn){
-			sn--;
-			ul=ul->next;
-		}
-	}
+	struct urllist *ul = get_urllist_start(uld,mw);
 
 	for(r=i=0;i<mw->body_len && ul && !r;i++){
 		r=write_line(mw->data.lv[i].line,mw->width,ul->data.doc,mw->ctx_type,mw->ctx_id,i);

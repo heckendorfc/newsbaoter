@@ -18,6 +18,7 @@ void xmlproc_free_doc(xmlDocPtr doc);
 void xmlproc_parse_block(struct xmlproc_data *h, char *buf, size_t n);
 void xmlproc_finish(struct xmlproc_data *h);
 void xmlproc_init(struct xmlproc_data *h);
+int xmlproc_write_entry(void *uld, struct mainwindow *mw, int id, int fd);
 void xmlproc_gen_lines(void *uld, struct mainwindow *mw);
 
 #endif

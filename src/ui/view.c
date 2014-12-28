@@ -10,6 +10,7 @@
 
 #include "view.h"
 #include "keys.h"
+#include "util.h"
 #include "../common_defs.h"
 
 #define HEAD_HEIGHT 1
@@ -53,25 +54,26 @@ int prev_item(struct mainwindow *mw){
 	return KH_RET_UPDATE;
 }
 
-static void request_list_update(struct mainwindow *mw){
-	ipcinfo ii=IPCVAL_UPDATE_REQUEST;
-	write(mw->outfd[1],&ii,sizeof(ii));
-	read(mw->infd[0],&ii,sizeof(ii));
-	if(ii!=IPCVAL_UPDATE_DONE){
-		/* TODO: error? */
-	}
-}
-
 int select_item(struct mainwindow *mw){
-	wattroff(body_w[cursor_i],A_BOLD);
 	if(mw->ctx_type==CTX_FEEDS){
 		mw->ctx_type=CTX_ENTRIES;
 		mw->ctx_id=cursor_i;
 		mw->page=0;
 		request_list_update(mw);
+		wattroff(body_w[cursor_i],A_BOLD);
+		cursor_i=0;
+		wattron(body_w[cursor_i],A_BOLD);
 	}
-	cursor_i=0;
-	wattron(body_w[cursor_i],A_BOLD);
+	else if(mw->ctx_type==CTX_ENTRIES){
+		int tmp_type=mw->ctx_type;
+		int tmp_id=mw->ctx_id;
+		//mw->ctx_type=CTX_ENTRY;
+		//mw->ctx_id=(mw->page*mw->body_len)+cursor_i;
+		tmp_id=(mw->page*mw->body_len)+cursor_i;
+		pipe_entry(mw,tmp_id);
+		//mw->ctx_type=tmp_type;
+		//mw->ctx_id=tmp_id;
+	}
 	return KH_RET_UPDATE;
 }
 
@@ -86,7 +88,6 @@ int context_exit(struct mainwindow *mw){
 		return KH_RET_UPDATE;
 	}
 }
-
 
 void clear_display(){
 	int i;

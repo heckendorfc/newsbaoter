@@ -13,6 +13,22 @@ struct io_data{
 	struct mainwindow *mw;
 };
 
+static void handle_ipc(struct io_data *iod, ipcinfo ii){
+	if(ii==IPCVAL_UPDATE_REQUEST){
+		xmlproc_gen_lines(iod->ul,iod->mw);
+	}
+	else if(ii==IPCVAL_WRITE_ENTRY){
+		int fd;
+		int id;
+		read(iod->mw->outfd[0],&id,sizeof(id));
+		read(iod->mw->outfd[0],&fd,sizeof(fd));
+		xmlproc_write_entry(iod->ul,iod->mw,id,fd);
+		close(fd);
+	}
+	ii=IPCVAL_DONE;
+	write(iod->mw->infd[1],&ii,sizeof(ii));
+}
+
 void* iothread(void *data){
 	struct io_data *iod=(struct io_data*)data;
 	struct urllist *ul;
@@ -21,7 +37,6 @@ void* iothread(void *data){
 	fd_set fdread;
 	int sret;
 	int wait_time=30*60;
-	FILE *ert=fopen("ert","w");
 
 	ul=urlparse();
 	iod->ul=ul;
@@ -39,21 +54,15 @@ void* iothread(void *data){
 			FD_SET(iod->mw->outfd[0],&fdread);
 			sret=select(iod->mw->outfd[0]+1,&fdread,NULL,NULL,&wait);
 			if(sret>0){
-				fprintf(ert,"sr\n");
-				fflush(ert);
 				if(FD_ISSET(iod->mw->outfd[0],&fdread)){
 					int rr=read(iod->mw->outfd[0],&ii,sizeof(ii));
-					if(rr>=0 && ii==IPCVAL_UPDATE_REQUEST){
-						fprintf(ert,"ur\n");
-						fflush(ert);
-						xmlproc_gen_lines(ul,iod->mw);
-						ii=IPCVAL_UPDATE_DONE;
-						write(iod->mw->infd[1],&ii,sizeof(ii));
+					if(rr>=0){
+						handle_ipc(iod,ii);
 					}
 				}
 			}
 		}while(sret>0 && wait.tv_sec>0);
-		break;
+		break; /* TODO: XXX: DELETE ME */
 	}
 
 	return (void*)0;

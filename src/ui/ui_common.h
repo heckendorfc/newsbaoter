@@ -15,6 +15,7 @@ enum listcontext{
 	CTX_NULL,
 	CTX_FEEDS,
 	CTX_ENTRIES,
+	CTX_ENTRY,
 };
 
 struct listview{
@@ -28,7 +29,8 @@ struct pagerview{
 typedef int ipcinfo;
 enum ipcinfo_val{
 	IPCVAL_UPDATE_REQUEST,
-	IPCVAL_UPDATE_DONE,
+	IPCVAL_WRITE_ENTRY,
+	IPCVAL_DONE,
 };
 
 struct mainwindow{
