@@ -171,7 +171,7 @@ void write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int inde
 		return;
 	}
 
-	sprintf(tmp,"%d  ",index+1);
+	sprintf(tmp,"%3d  ",index+1);
 	off=chars_to_widechars(line,tmp,len);
 
 	if(type==CTX_ENTRIES){
