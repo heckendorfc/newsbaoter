@@ -35,28 +35,33 @@ void xmlproc_free_doc(xmlDocPtr doc){
 	xmlFreeDoc(doc);
 }
 
-#define RSS_XSL "../xsl/RSS_20_xsl.xml"
-#define ATOM03_XSL "../xsl/Atom_03_xsl.xml"
-#define ATOM10_XSL "../xsl/Atom_10_xsl.xml"
-#define RDF_XSL "../xsl/RDF_xsl.xml"
+#ifndef SHARE_PATH
+#define SHARE_PATH "/tmp"
+#endif
+
+#define RSS_XSL "RSS_20_xsl.xml"
+#define ATOM03_XSL "Atom_03_xsl.xml"
+#define ATOM10_XSL "Atom_10_xsl.xml"
+#define RDF_XSL "RDF_xsl.xml"
+#define XSS(x) SHARE_PATH "/xsl/" x
 
 char* get_spec_sheet(xmlDocPtr doc){
 	xmlNode *root = xmlDocGetRootElement(doc);
 
 	if(root && root->name && strcmp((const char*)root->name,"feed")==0){
-		char *ret=ATOM10_XSL;
+		char *ret=XSS(ATOM10_XSL);
 		xmlChar *a=xmlGetProp(root,(xmlChar*)"version");
 		if(a){
 			if(strcmp((const char*)a,"0.3")==0)
-				ret=ATOM03_XSL;
+				ret=XSS(ATOM03_XSL);
 			xmlFree(a);
 		}
 		return ret;
 	}
 	else if(root && root->name && strcmp((const char*)root->name,"RDF")==0)
-		return RDF_XSL;
+		return XSS(RDF_XSL);
 
-	return RSS_XSL;
+	return XSS(RSS_XSL);
 }
 
 static void xmlproc_transform(struct xmlproc_data *h){

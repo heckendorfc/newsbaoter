@@ -15,7 +15,7 @@ if (NOT DEFINED INSTALL_LIBDIR)
 endif ()
 
 add_definitions(-DNB_VERS_S="0.1")
-#add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share" )
+add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share/newsbaoter" )
 #add_definitions(-DLIB_PATH="${INSTALL_LIBDIR}" )
 
 set(CURSES_USE_NCURSES TRUE)
@@ -46,11 +46,11 @@ src/ui/util.c
 
 target_link_libraries (newsbaoter ${CMAKE_THREAD_LIBS_INIT} ${NBLIBS})
 
-#FILE(GLOB shared_files share/*)
+FILE(GLOB shared_files xsl/*)
 #SET(shared_files share/defaults.conf share/create.sql)
 SET(doc_files README)
 SET(man_files share/newsbaoter.1)
-#INSTALL(FILES ${shared_files} DESTINATION share/newsbaoter)
+INSTALL(FILES ${shared_files} DESTINATION share/newsbaoter/xsl)
 INSTALL(FILES ${man_files} DESTINATION ${INSTALL_MANPREFIX}/man/man1)
 INSTALL(FILES ${doc_files} DESTINATION share/doc/newsbaoter)
 INSTALL(TARGETS newsbaoter RUNTIME DESTINATION bin)
