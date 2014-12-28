@@ -25,10 +25,61 @@
 			<xsl:apply-templates select="item" />
 		</feed>
 	</xsl:template>
-	
+
+	<xsl:template name="FormatDate">
+		<xsl:value-of select="." />
+	</xsl:template> 
+
 	<xsl:template match="pubDate | dc:date">
 		<publishDateTime>
-			<xsl:value-of select="." />
+			<xsl:variable name="DateTime" select="." />
+			<xsl:variable name="day-temp">
+				<xsl:value-of select="substring-after($DateTime,', ')" />
+			</xsl:variable>
+			<xsl:variable name="day">
+				<xsl:value-of select="substring-before($day-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="mo-temp">
+				<xsl:value-of select="substring-after($day-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="mo">
+				<xsl:value-of select="substring-before($mo-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="year-temp">
+				<xsl:value-of select="substring-after($mo-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="year">
+				<xsl:value-of select="substring-before($year-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="time-temp">
+				<xsl:value-of select="substring-after($year-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="time">
+				<xsl:value-of select="substring-before($time-temp,' ')" />
+			</xsl:variable>
+			<xsl:value-of select="$year"/>
+			<xsl:value-of select="'-'"/>
+			<xsl:choose>
+				<xsl:when test="$mo = 'jan' or $mo = 'Jan'">01</xsl:when>
+				<xsl:when test="$mo = 'feb' or $mo = 'Feb'">02</xsl:when>
+				<xsl:when test="$mo = 'mar' or $mo = 'Mar'">03</xsl:when>
+				<xsl:when test="$mo = 'apr' or $mo = 'Apr'">04</xsl:when>
+				<xsl:when test="$mo = 'may' or $mo = 'May'">05</xsl:when>
+				<xsl:when test="$mo = 'jun' or $mo = 'Jun'">06</xsl:when>
+				<xsl:when test="$mo = 'jul' or $mo = 'Jul'">07</xsl:when>
+				<xsl:when test="$mo = 'aug' or $mo = 'Aug'">08</xsl:when>
+				<xsl:when test="$mo = 'sep' or $mo = 'Sep'">09</xsl:when>
+				<xsl:when test="$mo = 'oct' or $mo = 'Oct'">10</xsl:when>
+				<xsl:when test="$mo = 'nov' or $mo = 'Nov'">11</xsl:when>
+				<xsl:when test="$mo = 'dec' or $mo = 'Dec'">12</xsl:when>
+			</xsl:choose>
+			<xsl:value-of select="'-'"/>
+			<xsl:if test="(string-length($day) &lt; 2)">
+				<xsl:value-of select="0"/>
+			</xsl:if>
+			<xsl:value-of select="$day"/>
+			<xsl:value-of select="' '"/>
+			<xsl:value-of select="$time"/>
 		</publishDateTime>
 	</xsl:template>
 

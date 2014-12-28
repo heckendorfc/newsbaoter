@@ -117,7 +117,7 @@ void fetch_urls(struct urllist *ul, const int npara){
 		while ((msg = curl_multi_info_read(cm, &msgs_left))) {
 			if (msg->msg == CURLMSG_DONE) {
 				int idx, found = 0;
-				char na[2]={0,0};
+				//char na[2]={0,0};
 
 				/* Find out which handle this message is about */
 				for (idx=0; idx<anp; idx++) {
@@ -127,8 +127,10 @@ void fetch_urls(struct urllist *ul, const int npara){
 				}
 
 				xmlproc_finish(xh+idx);
+				/*
 				na[0]=idx+'0';
 				xp_outf(xh[idx].doc,na);
+				*/
 				ula[idx]->data.doc=xh[idx].doc;
 			}
 		}

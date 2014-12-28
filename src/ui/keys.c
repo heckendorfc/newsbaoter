@@ -1,24 +1,30 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <ncurses.h>
 
 #include "../hash.h"
 #include "keys.h"
+#include "view.h"
 
 #define KHN(n) handle_ ## n
 #define KHF(n) {#n , KHN(n) }
 
 /* Key handlers */
 
-int handle_exit(){
-	return KH_RET_EXIT;
+int handle_exit(struct mainwindow *mw){
+	return context_exit(mw);
 }
 
-int handle_next_item(){
-	return KH_RET_EXIT;
+int handle_next(struct mainwindow *mw){
+	return next_item(mw);
 }
 
-int handle_prev_item(){
-	return KH_RET_EXIT;
+int handle_prev(struct mainwindow *mw){
+	return prev_item(mw);
+}
+
+int handle_select(struct mainwindow *mw){
+	return select_item(mw);
 }
 
 /* Defaults and Infrastructure */
@@ -30,6 +36,10 @@ struct keylist{
 
 static struct keylist default_keys[]={
 	{'q',KHN(exit)},
+	{'j',KHN(next)},
+	{'k',KHN(prev)},
+	{KEY_ENTER,KHN(select)},
+	{'o',KHN(select)},
 	{'\0',NULL}
 };
 
@@ -40,8 +50,8 @@ struct handlerlist{
 
 static struct handlerlist handler_names[]={
 	KHF(exit),
-	KHF(next_item),
-	KHF(prev_item),
+	KHF(next),
+	KHF(prev),
 	{NULL,NULL}
 };
 
@@ -61,14 +71,14 @@ void unbind_key(int c){
 	unset_uikey(s);
 }
 
-int process_key(int c){
+int process_key(int c, struct mainwindow *mw){
 	handler_t kh;
 	char s[17];
 
 	sprintf(s,"%x",c);
 
 	if((kh=get_uikey(s)))
-		return kh();
+		return kh(mw);
 
 	return KH_RET_NO_HANDLER;
 }

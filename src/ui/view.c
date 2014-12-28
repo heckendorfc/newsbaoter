@@ -30,10 +30,63 @@
 
 static WINDOW *head_w=NULL,*foot_w=NULL,**body_w=NULL;
 static int bw_len=0;
+static int content_bw_max=0;
 static int cursor_i=0;
 static int newsize=0;
 
 #define redo_allocation(x,n) {if(x){REINIT_MEM(x,n);}else{INIT_MEM(x,n);}}
+
+int next_item(struct mainwindow *mw){
+	wattroff(body_w[cursor_i],A_BOLD);
+	if(cursor_i<content_bw_max)
+		cursor_i++;
+	/* TODO: pages */
+	wattron(body_w[cursor_i],A_BOLD);
+	return KH_RET_UPDATE;
+}
+
+int prev_item(struct mainwindow *mw){
+	wattroff(body_w[cursor_i],A_BOLD);
+	if(cursor_i>0)
+		cursor_i--;
+	wattron(body_w[cursor_i],A_BOLD);
+	return KH_RET_UPDATE;
+}
+
+static void request_list_update(struct mainwindow *mw){
+	ipcinfo ii=IPCVAL_UPDATE_REQUEST;
+	write(mw->outfd[1],&ii,sizeof(ii));
+	read(mw->infd[0],&ii,sizeof(ii));
+	if(ii!=IPCVAL_UPDATE_DONE){
+		/* TODO: error? */
+	}
+}
+
+int select_item(struct mainwindow *mw){
+	wattroff(body_w[cursor_i],A_BOLD);
+	if(mw->ctx_type==CTX_FEEDS){
+		mw->ctx_type=CTX_ENTRIES;
+		mw->ctx_id=cursor_i;
+		mw->page=0;
+		request_list_update(mw);
+	}
+	cursor_i=0;
+	wattron(body_w[cursor_i],A_BOLD);
+	return KH_RET_UPDATE;
+}
+
+int context_exit(struct mainwindow *mw){
+	if(mw->ctx_type==CTX_FEEDS)
+		return KH_RET_EXIT;
+	else{
+		mw->ctx_type=CTX_FEEDS;
+		mw->ctx_id=0;
+		mw->page=0;
+		request_list_update(mw);
+		return KH_RET_UPDATE;
+	}
+}
+
 
 void clear_display(){
 	int i;
@@ -72,6 +125,8 @@ void regen_windows(){
 	for(i=0;i<bw_len;i++){
 		body_w[i]=newwin(BODI_HEIGHT,BODY_WIDTH,(i*BODI_HEIGHT)+BODY_TGAP,BODY_LGAP);
 	}
+
+	wattron(body_w[cursor_i],A_BOLD);
 
 	clear_display();
 }
@@ -126,8 +181,11 @@ void update_view(struct mainwindow *mw){
 
 	print_crop(head_w,mw->header,mw->width);
 	print_crop(foot_w,mw->footer,mw->width);
-	for(i=0;i<mw->body_len;i++)
+	for(i=0;i<mw->body_len;i++){
 		print_crop(body_w[i],mw->data.lv[i].line,mw->width);
+		if(mw->data.lv[i].line[0])
+			content_bw_max=i;
+	}
 }
 
 struct mainwindow* setup_ui(){
@@ -137,7 +195,7 @@ struct mainwindow* setup_ui(){
 
 	(void) initscr();      /* initialize the curses library */
 	keypad(stdscr, TRUE);  /* enable keyboard mapping */
-	//(void) nonl();         /* tell curses not to do NL->CR/NL on output */
+	(void) nonl();         /* tell curses not to do NL->CR/NL on output */
 	(void) cbreak();       /* take input chars one at a time, no wait for \n */
 	noecho();
 	//(void) echo();         /* echo input - in color */
@@ -155,18 +213,23 @@ struct mainwindow* setup_ui(){
 
 	mw->ctx_type=CTX_FEEDS;
 	mw->ctx_id=0;
-
+	if(pipe(mw->outfd)!=0)
+		; /* TODO: error */
+	if(pipe(mw->infd)!=0)
+		; /* TODO: error */
 	return mw;
 }
 
-void run_ui(){
+void run_ui(struct mainwindow *mw){
 	int ch;
 	int ret;
 
 	while((ch = getch())){
-		ret=process_key(ch);
+		ret=process_key(ch,mw);
 		if(ret==KH_RET_EXIT)
 			break;
+		else if(ret==KH_RET_UPDATE)
+			update_view(mw);
 	}
 }
 

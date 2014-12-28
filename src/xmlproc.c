@@ -104,12 +104,22 @@ void write_feeds_line(tchar_t *line, int len, xmlNode *root){
 	}
 }
 
+int set_standard_time(tchar_t *line, int len, xmlChar *tstr){
+	const size_t tsize=256;
+	char tmp[tsize];
+	struct tm tp;
+	//strptime((const char*)cur_node->children->content,"%a, %d %b %y %T",&tp);
+	strptime((const char*)tstr,"%F %T",&tp);
+	strftime(tmp,tsize,"%d %b  ",&tp);
+	return chars_to_widechars(line,tmp,len);
+}
+
 void write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
 	xmlNode *cur_node = NULL;
 	int off=0;
 	int entid=0;
-	const size_t tsize=256;
-	char tmp[tsize];
+
+	/*TODO: abstract node finding */
 
 	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
 		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"entry")==0){
@@ -127,11 +137,17 @@ void write_entries_line(tchar_t *line, int len, xmlNode *root, int id){
 
 	for(cur_node=root->children;cur_node;cur_node=cur_node->next){
 		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"publishDateTime")==0){
-			struct tm tp;
-			strptime((const char*)cur_node->children->content,"%a, %d %b %y %T",&tp);
-			strftime(tmp,tsize,"%d %b  ",&tp);
-			off+=chars_to_widechars(line+off,tmp,len-off);
+			off+=set_standard_time(line+off,len-off,cur_node->children->content);
 			break;
+		}
+	}
+
+	if(cur_node==NULL){
+		for(cur_node=root->children;cur_node;cur_node=cur_node->next){
+			if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"lastUpdatedDateTime")==0){
+				off+=set_standard_time(line+off,len-off,cur_node->children->content);
+				break;
+			}
 		}
 	}
 
@@ -159,7 +175,7 @@ void write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, int inde
 	off=chars_to_widechars(line,tmp,len);
 
 	if(type==CTX_ENTRIES){
-		write_entries_line(line+off,len-off,root,id);
+		write_entries_line(line+off,len-off,root,index);
 	}
 	else{
 		write_feeds_line(line+off,len-off,root);
@@ -177,9 +193,19 @@ void xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 		ul=ul->next;
 	}
 
+	if(mw->ctx_type==CTX_ENTRIES){
+		sn=mw->ctx_id;
+		/* skip down to the current id */
+		while(ul && sn){
+			sn--;
+			ul=ul->next;
+		}
+	}
+
 	for(i=0;i<mw->body_len && ul;i++){
 		write_line(mw->data.lv[i].line,mw->width,ul->data.doc,mw->ctx_type,mw->ctx_id,i);
-		ul=ul->next;
+		if(mw->ctx_type==CTX_FEEDS)
+			ul=ul->next;
 	}
 
 	for(;i<mw->body_len;i++)
