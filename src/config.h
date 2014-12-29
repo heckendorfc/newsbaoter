@@ -10,8 +10,8 @@ struct conf_read{
 };
 
 typedef struct nbcolor_t{
-	int color;
-	int attr;
+	unsigned int color;
+	unsigned int attr;
 }nbcolor_t;
 
 enum nbcolor_cp{
@@ -46,5 +46,7 @@ void clean_conf_read(struct conf_read *c);
 char* get_line_word(char *buf, char **next);
 char* get_config_file(const char *file);
 void read_config_options_file();
+void set_nbcolor(nbcolor_t *cd, unsigned int cfi, unsigned int cbi, unsigned int attr);
+void get_nbcolor(nbcolor_t *cd, unsigned int *cfi, unsigned int *cbi, unsigned int *attr);
 
 #endif

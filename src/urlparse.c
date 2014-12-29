@@ -7,20 +7,6 @@
 #include "config.h"
 #include "hash.h"
 
-char* get_config_file(const char *file){
-	char *home=getenv("HOME");
-	char *ret;
-	const int hn = strlen(home);
-	const int cn = strlen(file);
-	int n=hn+cn+2;
-
-	INIT_MEM(ret,n);
-
-	snprintf(ret,n,"%s/%s",home,file);
-
-	return ret;
-}
-
 struct urllist* urlparse(){
 	struct urllist *urls=NULL;
 	struct urllist *lptr;

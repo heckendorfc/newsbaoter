@@ -20,6 +20,7 @@ enum listcontext{
 
 struct listview{
 	tchar_t *line;
+	int has_content;
 };
 
 struct pagerview{

@@ -214,8 +214,14 @@ int chars_to_widechars(tchar_t *dst, const char *src, int max){
 	return bn;
 }
 
-static void print_crop(WINDOW *w, tchar_t *str, int max){
+static int print_crop(WINDOW *w, tchar_t *str, int max){
 	int i;
+	int ret;
+
+	if(str[0])
+		ret=1;
+	else
+		ret=0;
 
 	for(i=0;i<max && str[i];i++)
 		;
@@ -224,6 +230,8 @@ static void print_crop(WINDOW *w, tchar_t *str, int max){
 	str[max]=0;
 	mvwprintw(w,0,0,"%ls",str);
 	wrefresh(w);
+
+	return ret;
 }
 
 void update_view(struct mainwindow *mw){
@@ -247,8 +255,7 @@ void update_view(struct mainwindow *mw){
 	print_crop(foot_w,mw->footer,FOOT_WIDTH);
 	//print_crop(foot_w,mw->footer,mw->width);
 	for(i=0;i<mw->body_len;i++){
-		print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH);
-		if(mw->data.lv[i].line[0])
+		if(print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH))
 			content_bw_max=i;
 	}
 }
@@ -257,23 +264,31 @@ void catchresize(int sig){
 	newsize=1;
 }
 
-void set_color_pair(int n, int f, int b){
+void set_color_pair(int n, int f, int b, int a){
+	set_nbcolor(global_config.colors+n,f,b,a);
 	init_pair(n,f,b);
 }
 
 static void set_default_colors(){
 	memset(&global_config.colors,0,sizeof(global_config.colors));
 
-	init_pair(CP_LISTNORMAL,COLOR_WHITE,0);
-	init_pair(CP_LISTNORMAL_UR,COLOR_WHITE,0);
-	init_pair(CP_LISTFOCUS,COLOR_WHITE,0);
-	init_pair(CP_LISTFOCUS_UR,COLOR_WHITE,0);
-	init_pair(CP_INFO,COLOR_WHITE,COLOR_BLUE);
-	init_pair(CP_ARTICLE,COLOR_WHITE,0);
-	init_pair(CP_BACKGROUND,COLOR_WHITE,0);
+	set_color_pair(CP_LISTNORMAL,COLOR_WHITE,0,0);
+	set_color_pair(CP_LISTNORMAL_UR,COLOR_WHITE,0,0);
+	set_color_pair(CP_LISTFOCUS,COLOR_WHITE,0,A_BOLD);
+	set_color_pair(CP_LISTFOCUS_UR,COLOR_WHITE,0,A_BOLD);
+	set_color_pair(CP_INFO,COLOR_WHITE,COLOR_BLUE,0);
+	set_color_pair(CP_ARTICLE,COLOR_WHITE,0,0);
+	set_color_pair(CP_BACKGROUND,COLOR_WHITE,0,0);
+}
 
-	global_config.colors[CP_LISTFOCUS].attr=A_BOLD;
-	global_config.colors[CP_LISTFOCUS_UR].attr=A_BOLD;
+void set_config_colors(){
+	int i;
+	unsigned int cfi,cbi,attr;
+
+	for(i=0;i<CP_NULL;i++){
+		get_nbcolor(global_config.colors+i,&cfi,&cbi,&attr);
+		init_pair(i,cfi,cbi);
+	}
 }
 
 struct mainwindow* setup_ui(){
