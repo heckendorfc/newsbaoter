@@ -14,6 +14,7 @@
 #include "keys.h"
 #include "util.h"
 #include "../common_defs.h"
+#include "../config.h"
 
 #ifndef NB_VERS_S
 #define NB_VERS_S "A.B"
@@ -49,8 +50,17 @@ static int newsize=0;
 
 #define redo_allocation(x,n) {if(x){REINIT_MEM(x,n);}else{INIT_MEM(x,n);}}
 
+static void restyle_window(WINDOW *w, int style){
+	wattrset(w,global_config.colors[style].attr);
+	wcolor_set(w,style,NULL);
+}
+
+static void restyle_focus_item(int style){
+	restyle_window(body_w[cursor_i],style);
+}
+
 int next_item(struct mainwindow *mw){
-	wattroff(body_w[cursor_i],A_BOLD);
+	restyle_focus_item(CP_LISTNORMAL);
 	if(cursor_i<content_bw_max)
 		cursor_i++;
 	else if(content_bw_max==mw->body_len-1){
@@ -61,12 +71,12 @@ int next_item(struct mainwindow *mw){
 			mw->page--;
 		}
 	}
-	wattron(body_w[cursor_i],A_BOLD);
+	restyle_focus_item(CP_LISTFOCUS);
 	return KH_RET_UPDATE;
 }
 
 int prev_item(struct mainwindow *mw){
-	wattroff(body_w[cursor_i],A_BOLD);
+	restyle_focus_item(CP_LISTNORMAL);
 	if(cursor_i>0)
 		cursor_i--;
 	else if(mw->page>0){
@@ -74,7 +84,7 @@ int prev_item(struct mainwindow *mw){
 		cursor_i=mw->body_len-1;
 		request_list_update(mw);
 	}
-	wattron(body_w[cursor_i],A_BOLD);
+	restyle_focus_item(CP_LISTFOCUS);
 	return KH_RET_UPDATE;
 }
 
@@ -84,9 +94,9 @@ int select_item(struct mainwindow *mw){
 		mw->ctx_id=cursor_i;
 		mw->page=0;
 		request_list_update(mw);
-		wattroff(body_w[cursor_i],A_BOLD);
+		restyle_focus_item(CP_LISTNORMAL);
 		cursor_i=0;
-		wattron(body_w[cursor_i],A_BOLD);
+		restyle_focus_item(CP_LISTFOCUS);
 	}
 	else if(mw->ctx_type==CTX_ENTRIES){
 		int tmp_id;
@@ -149,26 +159,31 @@ void regen_windows(){
 	REINIT_MEM(body_w,bw_len);
 
 	titl_w=newwin(TITL_HEIGHT,TITL_WIDTH,TITL_TGAP,TITL_LGAP);
-	wrefresh(titl_w);
+	//wrefresh(titl_w);
+	restyle_window(titl_w,CP_INFO);
 
 	head_w=newwin(HEAD_HEIGHT,HEAD_WIDTH,HEAD_TGAP,HEAD_LGAP);
-	wrefresh(head_w);
+	//wrefresh(head_w);
+	restyle_window(head_w,CP_INFO);
 
 	foot_w=newwin(FOOT_HEIGHT,FOOT_WIDTH,FOOT_TGAP,FOOT_LGAP);
-	wrefresh(foot_w);
+	//wrefresh(foot_w);
+	restyle_window(foot_w,CP_INFO);
 
 	for(i=0;i<bw_len;i++){
 		body_w[i]=newwin(BODI_HEIGHT,BODY_WIDTH,(i*BODI_HEIGHT)+BODY_TGAP,BODY_LGAP);
+		restyle_window(body_w[i],CP_LISTNORMAL);
 	}
 
-	wattron(body_w[cursor_i],A_BOLD);
+	restyle_focus_item(CP_LISTFOCUS);
 
 	clear_display();
 }
 
 void resize_mainwindow(struct mainwindow *mw){
 	int i;
-	const int tl=BODY_HEIGHT*BODY_WIDTH;
+	const int wd=BODY_WIDTH+1;
+	const int tl=BODY_HEIGHT*wd;
 
 	if(mw->width!=BODY_WIDTH || mw->body_len!=BODY_HEIGHT){
 		regen_windows();
@@ -176,13 +191,13 @@ void resize_mainwindow(struct mainwindow *mw){
 
 	mw->body_len=BODY_HEIGHT;
 	mw->width=BODY_WIDTH;
-	redo_allocation(mw->header,mw->width);
-	redo_allocation(mw->footer,mw->width);
+	redo_allocation(mw->header,wd);
+	redo_allocation(mw->footer,wd);
 	redo_allocation(mw->data.lv,mw->body_len);
 	redo_allocation(mw->body,tl);
 
 	for(i=0;i<mw->body_len;i++){
-		mw->data.lv[i].line=mw->body+(i*mw->width);
+		mw->data.lv[i].line=mw->body+(i*wd);
 		mw->data.lv[i].line[0]=0;
 	}
 }
@@ -200,7 +215,13 @@ int chars_to_widechars(tchar_t *dst, const char *src, int max){
 }
 
 static void print_crop(WINDOW *w, tchar_t *str, int max){
-	str[max-1]=0;
+	int i;
+
+	for(i=0;i<max && str[i];i++)
+		;
+	for(;i<max;i++)
+		str[i]=' ';
+	str[max]=0;
 	mvwprintw(w,0,0,"%ls",str);
 	wrefresh(w);
 }
@@ -221,10 +242,12 @@ void update_view(struct mainwindow *mw){
 
 	mvwaddstr(titl_w,0,0,TITL_STRING);
 	wrefresh(titl_w);
-	print_crop(head_w,mw->header,mw->width);
-	print_crop(foot_w,mw->footer,mw->width);
+	print_crop(head_w,mw->header,HEAD_WIDTH);
+	//print_crop(head_w,mw->header,mw->width);
+	print_crop(foot_w,mw->footer,FOOT_WIDTH);
+	//print_crop(foot_w,mw->footer,mw->width);
 	for(i=0;i<mw->body_len;i++){
-		print_crop(body_w[i],mw->data.lv[i].line,mw->width);
+		print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH);
 		if(mw->data.lv[i].line[0])
 			content_bw_max=i;
 	}
@@ -232,6 +255,25 @@ void update_view(struct mainwindow *mw){
 
 void catchresize(int sig){
 	newsize=1;
+}
+
+void set_color_pair(int n, int f, int b){
+	init_pair(n,f,b);
+}
+
+static void set_default_colors(){
+	memset(&global_config.colors,0,sizeof(global_config.colors));
+
+	init_pair(CP_LISTNORMAL,COLOR_WHITE,0);
+	init_pair(CP_LISTNORMAL_UR,COLOR_WHITE,0);
+	init_pair(CP_LISTFOCUS,COLOR_WHITE,0);
+	init_pair(CP_LISTFOCUS_UR,COLOR_WHITE,0);
+	init_pair(CP_INFO,COLOR_WHITE,COLOR_BLUE);
+	init_pair(CP_ARTICLE,COLOR_WHITE,0);
+	init_pair(CP_BACKGROUND,COLOR_WHITE,0);
+
+	global_config.colors[CP_LISTFOCUS].attr=A_BOLD;
+	global_config.colors[CP_LISTFOCUS_UR].attr=A_BOLD;
 }
 
 struct mainwindow* setup_ui(){
@@ -246,6 +288,9 @@ struct mainwindow* setup_ui(){
 	(void) cbreak();       /* take input chars one at a time, no wait for \n */
 	noecho();
 	//(void) echo();         /* echo input - in color */
+
+	start_color();
+	set_default_colors();
 
 	move(LINES-1,0);
 
@@ -285,4 +330,3 @@ void end_ui(){
 
 	endwin();
 }
-

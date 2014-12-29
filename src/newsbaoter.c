@@ -5,6 +5,7 @@
 
 #include "urlparse.h"
 #include "httpfetch.h"
+#include "config.h"
 #include "ui/view.h"
 #include "ui/ui_common.h"
 
@@ -94,6 +95,7 @@ int main(int argc, char **argv){
 
 	mw=setup_ui();
 	iod.mw=mw;
+	//read_config_options_file();
 	pthread_create(&ioth,NULL,iothread,&iod);
 	chars_to_widechars(mw->header,hs,mw->width);
 	chars_to_widechars(mw->footer,fs,mw->width);

@@ -14,5 +14,6 @@ void update_view(struct mainwindow *mw);
 struct mainwindow* setup_ui();
 void run_ui(struct mainwindow *mw);
 void end_ui();
+void set_color_pair(int n, int f, int b);
 
 #endif
