@@ -33,7 +33,7 @@ static int create_db(sqlite3 *conn){
 		"AuthorEmail text, "
 		"Description text, "
 		"Content text)",NULL,NULL,NULL)!=SQLITE_OK ||
-	sqlite3_exec(conn,"CREATE VIEW PubEntry AS SELECT FeedID,Title,datetime(PubDate,'unixepoch') AS Date,URL,AuthorName,AuthorEmail,Description,Content FROM Entry ORDER BY PubDate DESC",NULL,NULL,NULL)!=SQLITE_OK)
+	sqlite3_exec(conn,"CREATE VIEW PubEntry AS SELECT EntryID,FeedID,Title,datetime(PubDate,'unixepoch') AS Date,URL,AuthorName,AuthorEmail,Description,Content FROM Entry ORDER BY PubDate DESC",NULL,NULL,NULL)!=SQLITE_OK)
 		return 1;
 	return 0;
 }
@@ -112,5 +112,26 @@ sqlite3* init_db(){
 	free(fn);
 
 	return conn;
+}
+
+void cache_toggle_read_entry(sqlite3 *conn, rowid_t id, int v){
+	const int qlen=256;
+	char query[qlen];
+	if(v<0)
+		snprintf(query,qlen,"UPDATE Entry SET Viewed=NOT Viewed WHERE EntryID=%lld",id);
+	else
+		snprintf(query,qlen,"UPDATE Entry SET Viewed=%d WHERE EntryID=%lld",v,id);
+	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
+}
+
+void cache_read_feed(sqlite3 *conn, rowid_t feedid){
+	char tmp[256];
+	if(feedid==0){
+		nb_sqlite3_exec(conn,"UPDATE Entry SET Viewed=1",NULL,NULL,NULL);
+	}
+	else{
+		sprintf(tmp,"UPDATE Entry SET Viewed=1 WHERE FeedID=%lld",feedid);
+		nb_sqlite3_exec(conn,tmp,NULL,NULL,NULL);
+	}
 }
 

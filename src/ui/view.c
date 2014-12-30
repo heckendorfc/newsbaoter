@@ -91,7 +91,7 @@ int prev_item(struct mainwindow *mw){
 int select_item(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS){
 		mw->ctx_type=CTX_ENTRIES;
-		mw->ctx_id=mw->data.lv[cursor_i].feedid;
+		mw->ctx_id=mw->data.lv[cursor_i].id;
 		mw->page=0;
 		request_list_update(mw);
 		restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
@@ -100,7 +100,8 @@ int select_item(struct mainwindow *mw){
 	}
 	else if(mw->ctx_type==CTX_ENTRIES){
 		int tmp_id;
-		tmp_id=(mw->page*mw->body_len)+cursor_i;
+		//tmp_id=(mw->page*mw->body_len)+cursor_i;
+		tmp_id=mw->data.lv[cursor_i].id;
 		pipe_entry(mw,tmp_id);
 	}
 	return KH_RET_UPDATE;
@@ -113,6 +114,24 @@ int refresh_all(struct mainwindow *mw){
 	mvwaddstr(foot_w,0,FOOT_WIDTH-21,"Refreshing Feeds");
 
 	return KH_RET_OK;
+}
+
+int catchup_feed(struct mainwindow *mw){
+	if(mw->ctx_type==CTX_FEEDS)
+		catchup_entries(mw,mw->data.lv[cursor_i].id);
+	else
+		catchup_entries(mw,mw->ctx_id);
+	return KH_RET_UPDATE;
+}
+
+int toggle_read(struct mainwindow *mw){
+	toggle_read_ipc(mw,mw->data.lv[cursor_i].id);
+	return KH_RET_UPDATE;
+}
+
+int catchup_all(struct mainwindow *mw){
+	catchup_entries(mw,0);
+	return KH_RET_UPDATE;
 }
 
 int context_exit(struct mainwindow *mw){

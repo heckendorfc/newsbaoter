@@ -64,7 +64,7 @@ int pipe_entry(struct mainwindow *mw, int id){
 
 	reset_prog_mode();
 
-	return 0;
+	return request_list_update(mw);
 }
 
 int request_list_update(struct mainwindow *mw){
@@ -78,3 +78,26 @@ int request_list_update(struct mainwindow *mw){
 	return 0;
 }
 
+int catchup_entries(struct mainwindow *mw, int id){
+	ipcinfo ii=IPCVAL_READ_FEED;
+	write(mw->outfd[1],&ii,sizeof(ii));
+	write(mw->outfd[1],&id,sizeof(id));
+	read(mw->infd[0],&ii,sizeof(ii));
+	if(ii!=IPCVAL_DONE){
+		/* TODO: error? */
+		return 1;
+	}
+	return request_list_update(mw);
+}
+
+int toggle_read_ipc(struct mainwindow *mw, int id){
+	ipcinfo ii=IPCVAL_TOGGLE_READ;
+	write(mw->outfd[1],&ii,sizeof(ii));
+	write(mw->outfd[1],&id,sizeof(id));
+	read(mw->infd[0],&ii,sizeof(ii));
+	if(ii!=IPCVAL_DONE){
+		/* TODO: error? */
+		return 1;
+	}
+	return request_list_update(mw);
+}

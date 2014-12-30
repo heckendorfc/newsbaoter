@@ -31,6 +31,18 @@ int handle_refresh_all(struct mainwindow *mw){
 	return refresh_all(mw);
 }
 
+int handle_catchup_feed(struct mainwindow *mw){
+	return catchup_feed(mw);
+}
+
+int handle_catchup_all(struct mainwindow *mw){
+	return catchup_all(mw);
+}
+
+int handle_toggle_read(struct mainwindow *mw){
+	return toggle_read(mw);
+}
+
 /* Defaults and Infrastructure */
 
 struct keylist{
@@ -45,6 +57,9 @@ static struct keylist default_keys[]={
 	{KEY_ENTER,KHN(select)},
 	{'o',KHN(select)},
 	{'R',KHN(refresh_all)},
+	{'A',KHN(catchup_feed)},
+	{'C',KHN(catchup_all)},
+	{'N',KHN(toggle_read)},
 	{'\0',NULL}
 };
 

@@ -40,25 +40,25 @@ static int feed_line_cb(void *data, int n_col, char **row, char **titles){
 	int off=0;
 	const size_t tsize=256;
 	char tmp[tsize];
-	long ur_ent=strtol(row[2],NULL,10);
+	long r_ent=strtol(row[2],NULL,10);
 	long tot_ent=strtol(row[3],NULL,10);
 	int nc=0;
 	const int count_width=10;
 	char urt[30];
 
-	fla->lv[fla->ind].unread=tot_ent-ur_ent;
+	fla->lv[fla->ind].unread=tot_ent-r_ent;
 
 	sprintf(tmp,"%3d  ",fla->ind+1);
 	off=chars_to_widechars(fla->lv[fla->ind].line,tmp,fla->len);
 
-	if(ur_ent<=0){
+	if(r_ent<tot_ent){
 		off+=chars_to_widechars(fla->lv[fla->ind].line+off,"N",fla->len-off);
 	}
 	else{
 		off+=chars_to_widechars(fla->lv[fla->ind].line+off," ",fla->len-off);
 	}
 
-	sprintf(urt,"[%ld/%ld]",tot_ent-ur_ent,tot_ent);
+	sprintf(urt,"[%ld/%ld]",tot_ent-r_ent,tot_ent);
 	nc=strlen(urt);
 	nc=count_width-nc;
 	if(nc<0)
@@ -77,7 +77,7 @@ static int feed_line_cb(void *data, int n_col, char **row, char **titles){
 	if(nc>=0)
 		off+=chars_to_widechars(fla->lv[fla->ind].line+off,row[nc],fla->len);
 
-	fla->lv[fla->ind].feedid=strtol(row[4],NULL,10);
+	fla->lv[fla->ind].id=strtol(row[4],NULL,10);
 
 	fla->ind++;
 
@@ -104,15 +104,15 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 	int off=0;
 	const size_t tsize=256;
 	char tmp[tsize];
-	long ur=strtol(row[1],NULL,10);
+	long r=strtol(row[1],NULL,10);
 	struct tm tp;
 
-	ela->lv[ela->ind].unread=!ur;
+	ela->lv[ela->ind].unread=!r;
 
 	sprintf(tmp,"%3d  ",ela->ind+1);
 	off=chars_to_widechars(ela->lv[ela->ind].line,tmp,ela->len);
 
-	if(ur>0){
+	if(!r){
 		off+=chars_to_widechars(ela->lv[ela->ind].line+off,"N",ela->len-off);
 	}
 	else{
@@ -125,6 +125,8 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 
 	off+=chars_to_widechars(ela->lv[ela->ind].line+off,row[0],ela->len-off);
 
+	ela->lv[ela->ind].id=strtol(row[3],NULL,10);
+
 	ela->ind++;
 
 	return SQLITE_OK;
@@ -135,7 +137,7 @@ static int write_entry_line(struct listview *lv, int len, int width, int feedid,
 	char query[qlen];
 	entry_list_arg ela = {.lv=lv, .len=len, .ind=0};
 
-	snprintf(query,qlen,"SELECT Entry.Title,Entry.Viewed,Entry.PubDate FROM Feed,Entry WHERE Feed.FeedID=%d AND Feed.FeedID=Entry.FeedID LIMIT %d,%d",feedid,start_ind,len);
+	snprintf(query,qlen,"SELECT Entry.Title,Entry.Viewed,Entry.PubDate,Entry.EntryID FROM Feed,Entry WHERE Feed.FeedID=%d AND Feed.FeedID=Entry.FeedID LIMIT %d,%d",feedid,start_ind,len);
 
 	nb_sqlite3_exec(db,query,entry_line_cb,&ela,NULL);
 
@@ -251,8 +253,8 @@ static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 	struct write_entry_info *wi = (struct write_entry_info*)data;
 	int i;
 
-	/* i=0 is FeedID; skip it */
-	for(i=1;i<n_col;i++){
+	/* i=0 is FeedID; i=1 is EntryID; skip them */
+	for(i=2;i<n_col;i++){
 		if(row[i]==NULL || row[i][0]==0)
 			continue;
 		write(wi->fd,titles[i],strlen(titles[i]));
@@ -268,9 +270,10 @@ int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 
 	const int qlen=256;
 	char query[qlen];
 	struct write_entry_info wi = {.s=query, .len=qlen, .fd=fd};
-	int feedid=mw->ctx_id;
 
-	snprintf(query,qlen,"SELECT * FROM PubEntry WHERE FeedID=%d LIMIT %d,1",feedid,id);
+	cache_toggle_read_entry(db,id,1);
+
+	snprintf(query,qlen,"SELECT * FROM PubEntry WHERE EntryID=%d",id);
 	nb_sqlite3_exec(db,query,write_entry_cb,&wi,NULL);
 
 	return 0;

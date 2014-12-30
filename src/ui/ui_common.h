@@ -21,7 +21,7 @@ enum listcontext{
 struct listview{
 	tchar_t *line;
 	int unread;
-	int feedid;
+	int id;
 };
 
 struct pagerview{
@@ -33,6 +33,8 @@ enum ipcinfo_val{
 	IPCVAL_UPDATE_REQUEST,
 	IPCVAL_WRITE_ENTRY,
 	IPCVAL_REFRESH_ALL,
+	IPCVAL_READ_FEED,
+	IPCVAL_TOGGLE_READ,
 	IPCVAL_DONE,
 	IPCVAL_EOL,
 };
