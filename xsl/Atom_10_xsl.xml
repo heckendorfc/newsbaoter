@@ -30,11 +30,9 @@
 	</xsl:template>
 	
 	<xsl:template match="atom:link">
-		<xsl:if test="@rel = 'alternate'">
-			<url>
-				<xsl:value-of select="@href" />
-			</url>
-		</xsl:if>
+		<url>
+			<xsl:value-of select="@href" />
+		</url>
 	</xsl:template>
 	
 	<xsl:template match="atom:tagline">

@@ -60,7 +60,7 @@ static void restyle_focus_item(int style){
 }
 
 int next_item(struct mainwindow *mw){
-	restyle_focus_item(CP_LISTNORMAL);
+	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
 	if(cursor_i<content_bw_max)
 		cursor_i++;
 	else if(content_bw_max==mw->body_len-1){
@@ -71,12 +71,12 @@ int next_item(struct mainwindow *mw){
 			mw->page--;
 		}
 	}
-	restyle_focus_item(CP_LISTFOCUS);
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
 	return KH_RET_UPDATE;
 }
 
 int prev_item(struct mainwindow *mw){
-	restyle_focus_item(CP_LISTNORMAL);
+	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
 	if(cursor_i>0)
 		cursor_i--;
 	else if(mw->page>0){
@@ -84,19 +84,19 @@ int prev_item(struct mainwindow *mw){
 		cursor_i=mw->body_len-1;
 		request_list_update(mw);
 	}
-	restyle_focus_item(CP_LISTFOCUS);
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
 	return KH_RET_UPDATE;
 }
 
 int select_item(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS){
 		mw->ctx_type=CTX_ENTRIES;
-		mw->ctx_id=cursor_i;
+		mw->ctx_id=mw->data.lv[cursor_i].feedid;
 		mw->page=0;
 		request_list_update(mw);
-		restyle_focus_item(CP_LISTNORMAL);
+		restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
 		cursor_i=0;
-		restyle_focus_item(CP_LISTFOCUS);
+		restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
 	}
 	else if(mw->ctx_type==CTX_ENTRIES){
 		int tmp_id;
@@ -141,7 +141,7 @@ void clear_display(){
 		wrefresh(body_w[i]);
 }
 
-void regen_windows(){
+void regen_windows(struct mainwindow *mw){
 	int i;
 
 	if(titl_w)
@@ -154,6 +154,9 @@ void regen_windows(){
 		for(i=0;i<bw_len;i++)
 			delwin(body_w[i]);
 	}
+
+	if(bw_len>BODY_HEIGHT)
+		cursor_i=0;
 
 	bw_len=BODY_HEIGHT;
 	REINIT_MEM(body_w,bw_len);
@@ -175,7 +178,7 @@ void regen_windows(){
 		restyle_window(body_w[i],CP_LISTNORMAL);
 	}
 
-	restyle_focus_item(CP_LISTFOCUS);
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
 
 	clear_display();
 }
@@ -186,7 +189,7 @@ void resize_mainwindow(struct mainwindow *mw){
 	const int tl=BODY_HEIGHT*wd;
 
 	if(mw->width!=BODY_WIDTH || mw->body_len!=BODY_HEIGHT){
-		regen_windows();
+		regen_windows(mw);
 	}
 
 	mw->body_len=BODY_HEIGHT;

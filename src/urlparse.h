@@ -2,10 +2,14 @@
 #define NB_URLPARSE_H
 
 #include "xmlproc.h"
+#include "sql/cache.h"
 
 struct urlitem{
 	char *url;
-	xmlDocPtr doc;
+	union{
+		xmlDocPtr doc;
+		rowid_t feedid;
+	}info;
 	int n_httperr;
 };
 

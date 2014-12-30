@@ -14,12 +14,13 @@
 struct io_data{
 	struct urllist *ul;
 	struct mainwindow *mw;
+	sqlite3 *db;
 };
 
 static int handle_ipc(struct io_data *iod, ipcinfo ii){
 	int ret=IPCVAL_DONE;
 	if(ii==IPCVAL_UPDATE_REQUEST){
-		if(cache_gen_lines(iod->ul,iod->mw))
+		if(cache_gen_lines(iod->ul,iod->mw,iod->db))
 			ret=IPCVAL_EOL;
 	}
 	else if(ii==IPCVAL_WRITE_ENTRY){
@@ -27,7 +28,7 @@ static int handle_ipc(struct io_data *iod, ipcinfo ii){
 		int id;
 		read(iod->mw->outfd[0],&id,sizeof(id));
 		read(iod->mw->outfd[0],&fd,sizeof(fd));
-		xmlproc_write_entry(iod->ul,iod->mw,id,fd);
+		cache_write_entry(iod->ul,iod->mw,id,fd,iod->db);
 		close(fd);
 	}
 	else if(ii==IPCVAL_REFRESH_ALL){
@@ -58,15 +59,16 @@ void* iothread(void *data){
 		parallel=global_config.parallel_reload;
 
 	db=init_db();
+	iod->db=db;
 	ul=urlparse();
 	iod->ul=ul;
 	http_init();
 
 	while(1){
 		if(iret || global_config.auto_reload){
-			fetch_urls(ul,5);
+			fetch_urls(ul,parallel,db);
 
-			cache_gen_lines(ul,iod->mw);
+			cache_gen_lines(ul,iod->mw,db);
 			update_view(iod->mw);
 			iret=0;
 		}

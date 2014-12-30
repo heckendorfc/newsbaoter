@@ -25,6 +25,7 @@ enum nbcolor_cp{
 	CP_NULL,
 	CP_ALERT,
 };
+#define FI_STYLE(base) (base+((mw->data.lv && mw->data.lv[cursor_i].unread)?2:0))
 
 struct nb_config{
 	char *proxy; /* "socks5://localhost:1234" */ /* TODO */

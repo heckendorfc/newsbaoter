@@ -1,0 +1,17 @@
+#ifndef NBCACHE_H
+#define NBCACHE_H
+
+#include <sqlite3.h>
+
+#include "../ui/ui_common.h"
+
+typedef sqlite3_int64 rowid_t;
+
+int nb_sqlite3_exec(sqlite3 *connection, const char *sql, int (*callback)(void*,int,char**,char**), void *arg, char **errmsg);
+sqlite3* init_db();
+rowid_t cache_update_feed(sqlite3 *conn, const char **data);
+rowid_t cache_update_entry(sqlite3 *conn, rowid_t feedid, const char **data);
+int cache_gen_lines(void *uld, struct mainwindow *mw, sqlite3 *db);
+int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 *db);
+
+#endif

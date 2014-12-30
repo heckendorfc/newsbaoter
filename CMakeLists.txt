@@ -40,6 +40,8 @@ src/httpfetch.c
 src/ui/view.c
 src/ui/keys.c
 src/ui/util.c
+src/sql/create.c
+src/sql/viewio.c
 )
 #src/ui/utf8.c
 

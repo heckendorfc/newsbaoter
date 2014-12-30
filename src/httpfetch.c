@@ -70,7 +70,7 @@ void http_init(){
 	curl_global_init(CURL_GLOBAL_ALL);
 }
 
-void fetch_urls(struct urllist *ul, const int npara){
+void fetch_urls(struct urllist *ul, const int npara, void *db){
 	CURL **ce;
 	CURLM *cm=curl_multi_init();
 	struct xmlproc_data *xh;
@@ -110,12 +110,12 @@ void fetch_urls(struct urllist *ul, const int npara){
 			}
 
 			ula[i]=tul;
-			if(tul->data.doc){
-				xmlproc_free_doc(tul->data.doc);
-				tul->data.doc=NULL;
+			if(tul->data.info.doc){
+				xmlproc_free_doc(tul->data.info.doc);
+				tul->data.info.doc=NULL;
 			}
 
-			xmlproc_init(xh+i);
+			xmlproc_init(xh+i,tul);
 
 			ce[i]=curl_easy_init();
 
@@ -163,12 +163,13 @@ void fetch_urls(struct urllist *ul, const int npara){
 					continue;
 				}
 
-				xmlproc_finish(xh+idx);
+				xmlproc_finish(xh+idx,db);
 				/*
 				na[0]=idx+'0';
 				xp_outf(xh[idx].doc,na);
 				*/
-				ula[idx]->data.doc=xh[idx].doc;
+				//ula[idx]->data.doc=xh[idx].doc;
+				ula[idx]->data.info.feedid=xh[idx].feedid;
 			}
 		}
 

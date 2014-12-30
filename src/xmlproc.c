@@ -17,6 +17,37 @@
 #include "xmlproc.h"
 #include "ui/view.h"
 #include "urlparse.h"
+#include "sql/cache.h"
+
+static const char *entry_fields[]={
+	"title",
+	"publishDateTime",
+	"lastUpdatedDateTime",
+	"url",
+	"authorName",
+	"authorEmail",
+	"description",
+	"content",
+	"entryUniqueId",
+	"",
+};
+#define NENTRYFIELD EFI_PUBLIC_DONE
+
+static char *feed_fields[]={
+	"title",
+	"url",
+	"description",
+	"authorName",
+	"authorEmail",
+	"imageUrl",
+	"imageText",
+	"",
+};
+#define NFEEDFIELD FFI_PUBLIC_DONE
+
+static void xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db);
+
+/* Parsing XML text into data structure */
 
 void xmlproc_parse_block(struct xmlproc_data *h, char *buf, size_t n){
 	if(h->ctx==NULL){
@@ -73,7 +104,7 @@ static void xmlproc_transform(struct xmlproc_data *h){
 	xsltFreeStylesheet(h->ss);
 }
 
-void xmlproc_finish(struct xmlproc_data *h){
+void xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
 	int res;
 
 	if(!h->ctx)
@@ -93,20 +124,20 @@ void xmlproc_finish(struct xmlproc_data *h){
 	}
 
 	xmlproc_transform(h);
+
+	xmlproc_update_cache(h,db);
+	xmlFreeDoc(h->doc);
 }
 
-void xmlproc_init(struct xmlproc_data *h){
+void xmlproc_init(struct xmlproc_data *h, void *ul){
+	struct urllist *tul=(struct urllist*)ul;
 	memset(h,0,sizeof(*h));
+	h->url=tul->data.url;
 }
 
-static xmlNode* find_xml_node(xmlNode *cur_node, char *name, int type){
-	for(;cur_node;cur_node=cur_node->next){
-		if(cur_node->type==type && strcmp((const char*)cur_node->name,name)==0)
-			return cur_node;
-	}
-	return NULL;
-}
+/* TODO: Probably delete this next section */
 
+#if 0
 static struct urllist* get_urllist_start(struct urllist *ul, struct mainwindow *mw){
 	int sn=mw->page*mw->body_len;
 
@@ -154,17 +185,6 @@ static void write_elem_if_avail(char *name, xmlNode *node, int fd){
 	}
 }
 
-static char entry_fields[][30]={
-	"title",
-	"publishDateTime",
-	"lastUpdatedDateTime",
-	"url",
-	"authorName",
-	"authorEmail",
-	"description",
-	"content",
-	"",
-};
 
 int xmlproc_write_entry(void *uld, struct mainwindow *mw, int id, int fd){
 	xmlNode *n;
@@ -325,4 +345,83 @@ int xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 		mw->data.lv[i].line[0]=0;
 
 	return 0;
+}
+#endif
+
+/* Translating XML data structure to SQL */
+
+static xmlNode* find_xml_node(xmlNode *cur_node, const char *name, int type){
+	for(;cur_node;cur_node=cur_node->next){
+		if(cur_node->type==type && strcmp((const char*)cur_node->name,name)==0)
+			return cur_node;
+	}
+	return NULL;
+}
+
+static const char* get_content_if_avail(xmlNode *node,const char *str){
+	node=find_xml_node(node,str,XML_ELEMENT_NODE);
+	if(node && node->children){
+		return (const char*)node->children->content;
+	}
+	return NULL;
+}
+
+static int update_feed(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
+	const char *fi[NFEEDFIELD];
+	int i;
+
+	for(i=0;i<NFEEDFIELD;i++)
+		fi[i]=get_content_if_avail(root->children,feed_fields[i]);
+
+	fi[FFI_URL]=h->url;
+
+	h->feedid=cache_update_feed(db,fi);
+
+	return 0;
+}
+
+static int update_entry(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
+	const char *ei[NENTRYFIELD];
+	int i;
+	char pdate[20];
+	char udate[20];
+	struct tm tp;
+
+	for(i=0;i<NENTRYFIELD;i++)
+		ei[i]=get_content_if_avail(root->children,entry_fields[i]);
+
+	udate[0]=pdate[0]=0;
+	if(ei[EFI_PDATE]){
+		strptime(ei[EFI_PDATE],"%F %T",&tp);
+		strftime(pdate,20,"%s",&tp);
+		ei[EFI_PDATE]=pdate;
+	}
+	if(ei[EFI_UDATE]){
+		strptime(ei[EFI_UDATE],"%F %T",&tp);
+		strftime(udate,20,"%s",&tp);
+		ei[EFI_UDATE]=udate;
+	}
+
+	cache_update_entry(db,h->feedid,ei);
+
+	return 0;
+}
+
+static int update_entries(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
+	xmlNode *cur_node=root->children;
+	for(;cur_node;cur_node=cur_node->next){
+		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"entry")==0){
+			update_entry(cur_node,h,db);
+		}
+	}
+
+	return 0;
+}
+
+static void xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db){
+	xmlNode *root = xmlDocGetRootElement(h->doc);
+
+	update_feed(root,h,db);
+	update_entries(root,h,db);
+
 }
