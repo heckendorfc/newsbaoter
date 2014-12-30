@@ -119,6 +119,7 @@ int context_exit(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS)
 		return KH_RET_EXIT;
 	else{
+		cursor_i=0;
 		mw->ctx_type=CTX_FEEDS;
 		mw->ctx_id=0;
 		mw->page=0;
@@ -267,6 +268,7 @@ void update_view(struct mainwindow *mw){
 	print_crop(foot_w,mw->footer,FOOT_WIDTH);
 	//print_crop(foot_w,mw->footer,mw->width);
 	for(i=0;i<mw->body_len;i++){
+		restyle_window(body_w[i],FB_STYLE);
 		if(print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH))
 			content_bw_max=i;
 	}
