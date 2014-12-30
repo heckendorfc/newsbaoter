@@ -4,6 +4,7 @@
 #include "httpfetch.h"
 #include "xmlproc.h"
 #include "urlparse.h"
+#include "config.h"
 
 static size_t write_memory_cb(void *contents, size_t size, size_t nmemb, void *userp){
 	size_t n=size*nmemb;
@@ -84,12 +85,29 @@ void fetch_urls(struct urllist *ul, const int npara){
 	INIT_MEM(ce,npara);
 	INIT_MEM(ula,npara);
 
-	tul=ul;
-	while(tul){
+	for(tul=ul;tul;tul=tul->next)
+		tul->data.n_httperr=-1;
+
+	/* TODO: this is awful. clean up at some point. */
+	while(1){
+		tul=ul;
 		anp=0;
 		for(i=0;i<npara;i++){
 			if(tul==NULL)
 				break;
+
+			if(tul->data.n_httperr<0){
+				tul->data.n_httperr=0;
+			}
+			else if(tul->data.n_httperr==0 || tul->data.n_httperr>=global_config.dl_retries){
+				tul=tul->next;
+				while(tul && (tul->data.n_httperr>=global_config.dl_retries || tul->data.n_httperr==0))
+					tul=tul->next;
+				if(tul==NULL)
+					break;
+				if(tul->data.n_httperr<0)
+					tul->data.n_httperr=0;
+			}
 
 			ula[i]=tul;
 			if(tul->data.doc){
@@ -114,6 +132,9 @@ void fetch_urls(struct urllist *ul, const int npara){
 			anp++;
 		}
 
+		if(anp==0)
+			break;
+
 		run_multi_group(cm);
 
 		while ((msg = curl_multi_info_read(cm, &msgs_left))) {
@@ -126,6 +147,20 @@ void fetch_urls(struct urllist *ul, const int npara){
 					found = (msg->easy_handle == ce[idx]);
 					if(found)
 						break;
+				}
+
+				if(msg->data.result!=CURLE_OK){
+					if(msg->data.result==CURLE_OPERATION_TIMEDOUT){
+						if(ula[idx]->data.n_httperr<0)
+							ula[idx]->data.n_httperr=1;
+						else
+							ula[idx]->data.n_httperr++;
+					}
+					else{
+						fprintf(stderr,"libcurl error (%d) on url [try %d/%d]: %s\n",msg->data.result,ula[idx]->data.n_httperr,global_config.dl_retries,ula[idx]->data.url);
+						ula[idx]->data.n_httperr=global_config.dl_retries;
+					}
+					continue;
 				}
 
 				xmlproc_finish(xh+idx);

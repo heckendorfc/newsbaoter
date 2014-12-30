@@ -6,6 +6,7 @@
 struct urlitem{
 	char *url;
 	xmlDocPtr doc;
+	int n_httperr;
 };
 
 struct urllist{

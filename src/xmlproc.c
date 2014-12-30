@@ -312,6 +312,10 @@ int xmlproc_gen_lines(void *uld, struct mainwindow *mw){
 	for(r=i=0;i<mw->body_len && ul && !r;i++){
 		r=write_line(mw->data.lv[i].line,mw->width,ul->data.doc,mw->ctx_type,mw->ctx_id,i);
 		if(mw->ctx_type==CTX_FEEDS){
+			if(r){
+				snprintf(tmp,tlen,"%3d  (F) %s",i+1,ul->data.url);
+				chars_to_widechars(mw->data.lv[i].line,tmp,mw->width);
+			}
 			ul=ul->next;
 			r=0;
 		}

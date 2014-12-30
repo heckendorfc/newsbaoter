@@ -25,12 +25,11 @@ find_package (LibXml2 REQUIRED)
 find_package (Threads REQUIRED)
 find_package (CURL REQUIRED)
 find_package (CursesW REQUIRED)
-#find_package(Sqlite REQUIRED)
-#include_directories(${SQLITE_INCLUDE_DIR})
+find_package (Sqlite REQUIRED)
 
 add_definitions(${LIBXML2_DEFINITIONS} ${LIBXSLT_DEFINITIONS})
-include_directories(sftl ${LIBXSLT_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${CURL_INCLUDE_DIRS} ${CURSESW_INCLUDE_DIR})
-set(NBLIBS ${CURL_LIBRARIES} ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CURSESW_LIBRARIES})
+include_directories(sftl ${LIBXSLT_INCLUDE_DIR} ${LIBXML2_INCLUDE_DIR} ${CURL_INCLUDE_DIRS} ${CURSESW_INCLUDE_DIR} ${SQLITE_INCLUDE_DIR})
+set(NBLIBS ${CURL_LIBRARIES} ${LIBXML2_LIBRARIES} ${LIBXSLT_LIBRARIES} ${CURSESW_LIBRARIES} ${SQLITE_LIBRARIES})
 
 add_executable (newsbaoter src/newsbaoter.c
 src/config.c

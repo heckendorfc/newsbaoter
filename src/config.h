@@ -23,18 +23,19 @@ enum nbcolor_cp{
 	CP_ARTICLE,
 	CP_BACKGROUND,
 	CP_NULL,
+	CP_ALERT,
 };
 
 struct nb_config{
-	char *proxy; /* "socks5://localhost:1234" */
+	char *proxy; /* "socks5://localhost:1234" */ /* TODO */
 	int dl_retries;
 	int auto_reload;
 	int reload_time;
-	int show_read_feeds;
-	int show_read_entries;
+	int show_read_feeds; /* TODO */
+	int show_read_entries; /* TODO */
 	int parallel_reload;
 	int confirm_exit;
-	int notify_beep;
+	int notify_beep; /* TODO cache/xml */
 	nbcolor_t colors[CP_NULL];
 };
 

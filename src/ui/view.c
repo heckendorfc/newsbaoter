@@ -223,7 +223,11 @@ static int print_crop(WINDOW *w, tchar_t *str, int max){
 	else
 		ret=0;
 
-	for(i=0;i<max && str[i];i++)
+	for(i=0;i<max && str[i] && str[i]==' ';i++)
+		;
+	if(i==max)
+		ret=0;
+	for(;i<max && str[i];i++)
 		;
 	for(;i<max;i++)
 		str[i]=' ';
@@ -244,6 +248,11 @@ void update_view(struct mainwindow *mw){
 		resize_mainwindow(mw);
 		newsize=0;
 		request_list_update(mw);
+	}
+
+	if(mw->beep_request){
+		beep();
+		mw->beep_request=0;
 	}
 
 	clear_display();
@@ -279,6 +288,8 @@ static void set_default_colors(){
 	set_color_pair(CP_INFO,COLOR_WHITE,COLOR_BLUE,0);
 	set_color_pair(CP_ARTICLE,COLOR_WHITE,0,0);
 	set_color_pair(CP_BACKGROUND,COLOR_WHITE,0,0);
+
+	init_pair(CP_ALERT,COLOR_WHITE,COLOR_RED);
 }
 
 void set_config_colors(){
@@ -333,8 +344,22 @@ void run_ui(struct mainwindow *mw){
 
 	while((ch = getch())){
 		ret=process_key(ch,mw);
-		if(ret==KH_RET_EXIT)
-			break;
+		if(ret==KH_RET_EXIT){
+			if(global_config.confirm_exit){
+				wcolor_set(foot_w,CP_ALERT,NULL);
+				mvwaddstr(foot_w,0,0,"Confirm exit? (y/[n])");
+				wrefresh(foot_w);
+				if(getch()=='y'){
+					break;
+				}
+				else{
+					wcolor_set(foot_w,CP_INFO,NULL);
+					update_view(mw);
+				}
+			}
+			else
+				break;
+		}
 		else if(ret==KH_RET_UPDATE)
 			update_view(mw);
 	}

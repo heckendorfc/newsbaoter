@@ -20,7 +20,6 @@ enum listcontext{
 
 struct listview{
 	tchar_t *line;
-	int has_content;
 };
 
 struct pagerview{
@@ -48,7 +47,7 @@ struct mainwindow{
 	int ctx_id;
 	int outfd[2];
 	int infd[2];
-	int update_request;
+	int beep_request;
 	union{
 		struct listview *lv;
 		struct pagerview *pv;

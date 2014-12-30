@@ -2,12 +2,14 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <sqlite3.h>
 
 #include "urlparse.h"
 #include "httpfetch.h"
 #include "config.h"
 #include "ui/view.h"
 #include "ui/ui_common.h"
+#include "sql/cache.h"
 
 struct io_data{
 	struct urllist *ul;
@@ -17,7 +19,7 @@ struct io_data{
 static int handle_ipc(struct io_data *iod, ipcinfo ii){
 	int ret=IPCVAL_DONE;
 	if(ii==IPCVAL_UPDATE_REQUEST){
-		if(xmlproc_gen_lines(iod->ul,iod->mw))
+		if(cache_gen_lines(iod->ul,iod->mw))
 			ret=IPCVAL_EOL;
 	}
 	else if(ii==IPCVAL_WRITE_ENTRY){
@@ -40,25 +42,37 @@ static int handle_ipc(struct io_data *iod, ipcinfo ii){
 void* iothread(void *data){
 	struct io_data *iod=(struct io_data*)data;
 	struct urllist *ul;
+	sqlite3 *db;
 	ipcinfo ii;
 	struct timeval wait = { 0, 0 };
 	fd_set fdread;
 	int sret;
-	int iret;
+	int iret=0;
 	int wait_time=30*60;
+	int parallel=5;
 
+	if(global_config.reload_time>0)
+		wait_time=global_config.reload_time*60;
+
+	if(global_config.parallel_reload>0)
+		parallel=global_config.parallel_reload;
+
+	db=init_db();
 	ul=urlparse();
 	iod->ul=ul;
 	http_init();
 
 	while(1){
-		fetch_urls(ul,5);
+		if(iret || global_config.auto_reload){
+			fetch_urls(ul,5);
+
+			cache_gen_lines(ul,iod->mw);
+			update_view(iod->mw);
+			iret=0;
+		}
 
 		wait.tv_sec=wait_time;
 		wait.tv_usec=0;
-
-		xmlproc_gen_lines(ul,iod->mw);
-		update_view(iod->mw);
 
 		do{
 			FD_ZERO(&fdread);
@@ -82,6 +96,8 @@ void* iothread(void *data){
 			exit(3);
 		}
 	}
+
+	sqlite3_close(db);
 
 	return (void*)0;
 }
