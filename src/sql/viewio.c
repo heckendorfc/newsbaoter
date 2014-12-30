@@ -41,28 +41,29 @@ static int feed_line_cb(void *data, int n_col, char **row, char **titles){
 	const size_t tsize=256;
 	char tmp[tsize];
 	long ur_ent=strtol(row[2],NULL,10);
+	long tot_ent=strtol(row[3],NULL,10);
 	int nc=0;
 	const int count_width=10;
+	char urt[30];
 
-	fla->lv[fla->ind].unread=ur_ent;
+	fla->lv[fla->ind].unread=tot_ent-ur_ent;
 
 	sprintf(tmp,"%3d  ",fla->ind+1);
 	off=chars_to_widechars(fla->lv[fla->ind].line,tmp,fla->len);
 
-	if(ur_ent>0){
+	if(ur_ent<=0){
 		off+=chars_to_widechars(fla->lv[fla->ind].line+off,"N",fla->len-off);
 	}
 	else{
 		off+=chars_to_widechars(fla->lv[fla->ind].line+off," ",fla->len-off);
 	}
 
-	nc=3; /* [/] */
-	nc+=strlen(row[2]);
-	nc+=strlen(row[3]);
+	sprintf(urt,"[%ld/%ld]",tot_ent-ur_ent,tot_ent);
+	nc=strlen(urt);
 	nc=count_width-nc;
 	if(nc<0)
 		nc=0;
-	snprintf(tmp,tsize,"%*c[%s/%s] ",nc,' ',row[2],row[3]);
+	snprintf(tmp,tsize,"%*c%s ",nc,' ',urt);
 	off+=chars_to_widechars(fla->lv[fla->ind].line+off,tmp,fla->len-off);
 
 	nc=-1;
@@ -106,7 +107,7 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 	long ur=strtol(row[1],NULL,10);
 	struct tm tp;
 
-	ela->lv[ela->ind].unread=ur;
+	ela->lv[ela->ind].unread=!ur;
 
 	sprintf(tmp,"%3d  ",ela->ind+1);
 	off=chars_to_widechars(ela->lv[ela->ind].line,tmp,ela->len);
@@ -126,11 +127,6 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 
 	ela->ind++;
 
-	return SQLITE_OK;
-}
-
-static int get_int_cb(void *data, int n_col, char **row, char **titles){
-	*((int*)data)=strtol(row[0]?row[0]:"0",NULL,10);
 	return SQLITE_OK;
 }
 
