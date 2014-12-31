@@ -59,6 +59,27 @@ static void restyle_focus_item(int style){
 	restyle_window(body_w[cursor_i],style);
 }
 
+int low_item(struct mainwindow *mw){
+	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	cursor_i=content_bw_max;
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+	return KH_RET_UPDATE;
+}
+
+int mid_item(struct mainwindow *mw){
+	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	cursor_i=content_bw_max/2;
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+	return KH_RET_UPDATE;
+}
+
+int high_item(struct mainwindow *mw){
+	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	cursor_i=0;
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+	return KH_RET_UPDATE;
+}
+
 int next_item(struct mainwindow *mw){
 	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
 	if(cursor_i<content_bw_max)

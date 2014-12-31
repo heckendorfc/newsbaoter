@@ -10,7 +10,8 @@ unbind-key      o
 ## arg2: the operation
 ##       One of: exit, next, prev, select, reload-all,
 ##               mark-feed-read, mark-all-feeds-read,
-##               toggle-article-read.
+##               toggle-article-read, high-item, low-item.
+##               mid-item.
 bind-key        O       select
 
 ### Periodically reload feeds automatically

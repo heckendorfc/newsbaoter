@@ -20,6 +20,18 @@ int handle_next(struct mainwindow *mw){
 	return next_item(mw);
 }
 
+int handle_low_item(struct mainwindow *mw){
+	return low_item(mw);
+}
+
+int handle_mid_item(struct mainwindow *mw){
+	return mid_item(mw);
+}
+
+int handle_high_item(struct mainwindow *mw){
+	return high_item(mw);
+}
+
 int handle_next_unread(struct mainwindow *mw){
 	return next_unread_item(mw);
 }
@@ -60,6 +72,9 @@ static struct keylist default_keys[]={
 	{'j',KHN(next)},
 	//{'n',KHN(next_unread)}, /* TODO: implement this */
 	{'k',KHN(prev)},
+	{'L',KHN(low_item)},
+	{'M',KHN(mid_item)},
+	{'H',KHN(high_item)},
 	{KEY_ENTER,KHN(select)},
 	{'o',KHN(select)},
 	{'R',KHN(refresh_all)},
@@ -79,6 +94,9 @@ static struct handlerlist handler_names[]={
 	KHF(next),
 	KHF(prev),
 	KHF(select),
+	{"high-item",KHN(high_item)},
+	{"mid-item",KHN(mid_item)},
+	{"low-item",KHN(low_item)},
 	{"reload-all",KHN(refresh_all)},
 	{"mark-feed-read",KHN(catchup_feed)},
 	{"mark-all-feeds-read",KHN(catchup_all)},
