@@ -171,19 +171,20 @@ int catchup_feed(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS){
 		catchup_entries(mw,mw->data.lv[cursor_i].id);
 		restyle_focus_item(mw,CP_LISTFOCUS);
-		return KH_RET_OK;
 	}
 	else{
 		catchup_entries(mw,mw->ctx_id);
-		return KH_RET_UPDATE;
 	}
+	return KH_RET_UPDATE;
 }
 
 int toggle_read(struct mainwindow *mw){
-	toggle_read_ipc(mw,mw->data.lv[cursor_i].id);
-	restyle_focus_item(mw,CP_LISTFOCUS);
-	if(mw->ctx_id==0 || !global_config.show_read_entries)
-		return KH_RET_UPDATE;
+	if(mw->ctx_type==CTX_ENTRIES){
+		toggle_read_ipc(mw,mw->data.lv[cursor_i].id);
+		restyle_focus_item(mw,CP_LISTFOCUS);
+		if(mw->ctx_id==0 || !global_config.show_read_entries)
+			return KH_RET_UPDATE;
+	}
 	return KH_RET_OK;
 }
 
