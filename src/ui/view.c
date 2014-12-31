@@ -86,6 +86,7 @@ int high_item(struct mainwindow *mw){
 }
 
 int next_item(struct mainwindow *mw){
+	int ret=KH_RET_OK;
 	restyle_focus_item(mw,CP_LISTNORMAL);
 	if(cursor_i<content_bw_max)
 		cursor_i++;
@@ -96,9 +97,11 @@ int next_item(struct mainwindow *mw){
 			cursor_i=content_bw_max;
 			mw->page--;
 		}
+		else
+			ret=KH_RET_UPDATE;
 	}
 	restyle_focus_item(mw,CP_LISTFOCUS);
-	return KH_RET_OK;
+	return ret;
 }
 
 int next_unread_item(struct mainwindow *mw){
@@ -117,6 +120,7 @@ int next_unread_item(struct mainwindow *mw){
 }
 
 int prev_item(struct mainwindow *mw){
+	int ret=KH_RET_OK;
 	restyle_focus_item(mw,CP_LISTNORMAL);
 	if(cursor_i>0)
 		cursor_i--;
@@ -124,9 +128,10 @@ int prev_item(struct mainwindow *mw){
 		mw->page--;
 		cursor_i=mw->body_len-1;
 		request_list_update(mw);
+		ret=KH_RET_UPDATE;
 	}
 	restyle_focus_item(mw,CP_LISTFOCUS);
-	return KH_RET_OK;
+	return ret;
 }
 
 int select_item(struct mainwindow *mw){
@@ -337,9 +342,7 @@ void update_view(struct mainwindow *mw){
 	mvwaddstr(titl_w,0,0,TITL_STRING);
 	wrefresh(titl_w);
 	print_crop(head_w,mw->header,HEAD_WIDTH);
-	//print_crop(head_w,mw->header,mw->width);
 	print_crop(foot_w,mw->footer,FOOT_WIDTH);
-	//print_crop(foot_w,mw->footer,mw->width);
 	for(i=0;i<mw->body_len;i++){
 		restyle_window(body_w[i],FB_STYLE);
 		if(print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH))
