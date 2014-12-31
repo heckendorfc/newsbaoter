@@ -51,38 +51,42 @@ static int newsize=0;
 
 #define redo_allocation(x,n) {if(x){REINIT_MEM(x,n);}else{INIT_MEM(x,n);}}
 
+static int print_crop(WINDOW *w, tchar_t *str, int max);
+
 static void restyle_window(WINDOW *w, int style){
 	wattrset(w,global_config.colors[style].attr);
 	wcolor_set(w,style,NULL);
 }
 
-static void restyle_focus_item(int style){
+static void restyle_focus_item(struct mainwindow *mw, int style){
+	style=FI_STYLE(style);
 	restyle_window(body_w[cursor_i],style);
+	print_crop(body_w[cursor_i],mw->data.lv[cursor_i].line,BODY_WIDTH);
 }
 
 int low_item(struct mainwindow *mw){
-	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	restyle_focus_item(mw,CP_LISTNORMAL);
 	cursor_i=content_bw_max;
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
-	return KH_RET_UPDATE;
+	restyle_focus_item(mw,CP_LISTFOCUS);
+	return KH_RET_OK;
 }
 
 int mid_item(struct mainwindow *mw){
-	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	restyle_focus_item(mw,CP_LISTNORMAL);
 	cursor_i=content_bw_max/2;
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
-	return KH_RET_UPDATE;
+	restyle_focus_item(mw,CP_LISTFOCUS);
+	return KH_RET_OK;
 }
 
 int high_item(struct mainwindow *mw){
-	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	restyle_focus_item(mw,CP_LISTNORMAL);
 	cursor_i=0;
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
-	return KH_RET_UPDATE;
+	restyle_focus_item(mw,CP_LISTFOCUS);
+	return KH_RET_OK;
 }
 
 int next_item(struct mainwindow *mw){
-	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	restyle_focus_item(mw,CP_LISTNORMAL);
 	if(cursor_i<content_bw_max)
 		cursor_i++;
 	else if(content_bw_max==mw->body_len-1){
@@ -93,14 +97,14 @@ int next_item(struct mainwindow *mw){
 			mw->page--;
 		}
 	}
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
-	return KH_RET_UPDATE;
+	restyle_focus_item(mw,CP_LISTFOCUS);
+	return KH_RET_OK;
 }
 
 int next_unread_item(struct mainwindow *mw){
 	int i;
 	int found=-1;
-	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	restyle_focus_item(mw,CP_LISTNORMAL);
 	for(i=cursor_i;i<=content_bw_max;i++){
 		if(mw->data.lv[i].unread){
 			found=cursor_i=i;
@@ -108,12 +112,12 @@ int next_unread_item(struct mainwindow *mw){
 	}
 	if(found<0)
 		next_unread_ipc(mw,cursor_i);
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+	restyle_focus_item(mw,CP_LISTFOCUS);
 	return KH_RET_UPDATE;
 }
 
 int prev_item(struct mainwindow *mw){
-	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	restyle_focus_item(mw,CP_LISTNORMAL);
 	if(cursor_i>0)
 		cursor_i--;
 	else if(mw->page>0){
@@ -121,8 +125,8 @@ int prev_item(struct mainwindow *mw){
 		cursor_i=mw->body_len-1;
 		request_list_update(mw);
 	}
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
-	return KH_RET_UPDATE;
+	restyle_focus_item(mw,CP_LISTFOCUS);
+	return KH_RET_OK;
 }
 
 int select_item(struct mainwindow *mw){
@@ -131,9 +135,9 @@ int select_item(struct mainwindow *mw){
 		mw->ctx_id=mw->data.lv[cursor_i].id;
 		mw->page=0;
 		request_list_update(mw);
-		restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+		restyle_focus_item(mw,CP_LISTNORMAL);
 		cursor_i=0;
-		restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+		restyle_focus_item(mw,CP_LISTFOCUS);
 	}
 	else if(mw->ctx_type==CTX_ENTRIES){
 		int tmp_id;
@@ -159,16 +163,23 @@ int refresh_all(struct mainwindow *mw){
 }
 
 int catchup_feed(struct mainwindow *mw){
-	if(mw->ctx_type==CTX_FEEDS)
+	if(mw->ctx_type==CTX_FEEDS){
 		catchup_entries(mw,mw->data.lv[cursor_i].id);
-	else
+		restyle_focus_item(mw,CP_LISTFOCUS);
+		return KH_RET_OK;
+	}
+	else{
 		catchup_entries(mw,mw->ctx_id);
-	return KH_RET_UPDATE;
+		return KH_RET_UPDATE;
+	}
 }
 
 int toggle_read(struct mainwindow *mw){
 	toggle_read_ipc(mw,mw->data.lv[cursor_i].id);
-	return KH_RET_UPDATE;
+	restyle_focus_item(mw,CP_LISTFOCUS);
+	if(mw->ctx_id==0 || !global_config.show_read_entries)
+		return KH_RET_UPDATE;
+	return KH_RET_OK;
 }
 
 int catchup_all(struct mainwindow *mw){
@@ -241,7 +252,7 @@ void regen_windows(struct mainwindow *mw){
 		restyle_window(body_w[i],CP_LISTNORMAL);
 	}
 
-	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+	restyle_window(body_w[cursor_i],FI_STYLE(CP_LISTFOCUS));
 
 	clear_display();
 }
