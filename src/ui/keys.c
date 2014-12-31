@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <ncurses.h>
+#include <string.h>
 
 #include "../hash.h"
 #include "keys.h"
@@ -17,6 +18,10 @@ int handle_exit(struct mainwindow *mw){
 
 int handle_next(struct mainwindow *mw){
 	return next_item(mw);
+}
+
+int handle_next_unread(struct mainwindow *mw){
+	return next_unread_item(mw);
 }
 
 int handle_prev(struct mainwindow *mw){
@@ -53,6 +58,7 @@ struct keylist{
 static struct keylist default_keys[]={
 	{'q',KHN(exit)},
 	{'j',KHN(next)},
+	//{'n',KHN(next_unread)}, /* TODO: implement this */
 	{'k',KHN(prev)},
 	{KEY_ENTER,KHN(select)},
 	{'o',KHN(select)},
@@ -72,8 +78,23 @@ static struct handlerlist handler_names[]={
 	KHF(exit),
 	KHF(next),
 	KHF(prev),
+	KHF(select),
+	{"reload-all",KHN(refresh_all)},
+	{"mark-feed-read",KHN(catchup_feed)},
+	{"mark-all-feeds-read",KHN(catchup_all)},
+	{"toggle-article-read",KHN(toggle_read)},
 	{NULL,NULL}
 };
+
+handler_t find_handler(char *s){
+	int i;
+
+	for(i=0;handler_names[i].name;i++)
+		if(strcmp(handler_names[i].name,s)==0)
+			break;
+
+	return handler_names[i].handler;
+}
 
 void bind_key(int c, handler_t handler){
 	char s[17];

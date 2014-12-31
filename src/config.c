@@ -9,6 +9,7 @@
 #include "common_defs.h"
 #include "config.h"
 #include "ui/view.h"
+#include "ui/keys.h"
 
 #define CONF_BUF_INC 256
 
@@ -178,6 +179,34 @@ int copy_color(void *d, char *next){
 	return 0;
 }
 
+int config_bind_key(void *d, char *next){
+	char *v;
+	tchar_t key;
+	handler_t h;
+	int f=d-((void*)&global_config);
+
+	if(!(v=get_line_word(next,&next)))
+		return 1;
+
+	if(mbtowc(&key,v,strlen(v))<0)
+		return 1;
+
+	if(f==0){
+		unbind_key(key);
+	}
+	else{
+		if(!(v=get_line_word(next,&next)))
+			return 1;
+
+		if(!(h=find_handler(v)))
+			return 1;
+
+		bind_key(key,h);
+	}
+
+	return 0;
+}
+
 #define NBCO(n) offsetof(struct nb_config, n)
 struct config_args{
 	const char *str;
@@ -194,6 +223,8 @@ struct config_args{
 	{"confirm-exit",NBCO(confirm_exit),copy_int},
 	{"notify-beep",NBCO(notify_beep),copy_int},
 	{"color",NBCO(colors),copy_color},
+	{"bind-key",0x1,config_bind_key},
+	{"unbind-key",0x0,config_bind_key},
 	{NULL,0,NULL}
 };
 

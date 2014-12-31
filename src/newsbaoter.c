@@ -44,6 +44,12 @@ static int handle_ipc(struct io_data *iod, ipcinfo ii){
 		read(iod->mw->outfd[0],&id,sizeof(id));
 		cache_toggle_read_entry(iod->db,id,-1);
 	}
+	else if(ii==IPCVAL_NEXT_UNREAD){
+		int id;
+		read(iod->mw->outfd[0],&id,sizeof(id));
+		id=cache_next_unread(iod->mw,id,iod->db);
+		write(iod->mw->infd[1],&id,sizeof(id));
+	}
 	ii=ret;
 	write(iod->mw->infd[1],&ii,sizeof(ii));
 

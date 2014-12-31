@@ -51,7 +51,7 @@ rowid_t cache_update_feed(sqlite3 *conn, const char **data){
 	const int map[]={FFI_URL,FFI_TITLE,FFI_DESC,FFI_AUTHNAME,FFI_AUTHEMAIL,FFI_IURL,FFI_ITEXT,-1};
 	int i;
 
-	sprintf(query,"INSERT OR REPLACE INTO Feed (FeedID,Title,URL,Description,AuthorName,AuthorEmail,ImageURL,ImageText) VALUES ((SELECT FeedID FROM Feed WHERE URL=?),?,?1,?,?,?,?,?)");
+	nb_qnprintf(query,qlen,"INSERT OR REPLACE INTO Feed (FeedID,Title,URL,Description,AuthorName,AuthorEmail,ImageURL,ImageText) VALUES ((SELECT FeedID FROM Feed WHERE URL=?),?,?1,?,?,?,?,?)");
 	if(sqlite3_prepare_v2(conn,query,qlen,&s,NULL)!=SQLITE_OK)exit(2);
 	for(i=0;map[i]>=0;i++)
 		if(sqlite3_bind_text(s,i+1,data[map[i]],-1,SQLITE_STATIC)!=SQLITE_OK)exit(2);
@@ -70,7 +70,7 @@ rowid_t cache_update_entry(sqlite3 *conn, rowid_t feedid, const char **data){
 	int i;
 	long rnum;
 
-	snprintf(query,qlen,"INSERT OR REPLACE INTO Entry (EntryID,FeedID,Viewed,PubDate,ModDate,UniqueId,Title,URL,AuthorName,AuthorEmail,Description,Content) VALUES ((SELECT EntryID FROM Entry WHERE FeedID=?1 AND UniqueId=?2),?1,(SELECT IFNULL((SELECT Viewed FROM Entry WHERE FeedID=?1 AND UniqueId=?2),0)),?3,?4,?2,?5,?6,?7,?8,?9,?10)");
+	nb_qnprintf(query,qlen,"INSERT OR REPLACE INTO Entry (EntryID,FeedID,Viewed,PubDate,ModDate,UniqueId,Title,URL,AuthorName,AuthorEmail,Description,Content) VALUES ((SELECT EntryID FROM Entry WHERE FeedID=?1 AND UniqueId=?2),?1,(SELECT IFNULL((SELECT Viewed FROM Entry WHERE FeedID=?1 AND UniqueId=?2),0)),?3,?4,?2,?5,?6,?7,?8,?9,?10)");
 
 	if((i=sqlite3_prepare_v2(conn,query,qlen,&s,NULL))!=SQLITE_OK)exit(2);
 	for(i=0;map[i]!=-1;i++){
@@ -123,19 +123,20 @@ void cache_toggle_read_entry(sqlite3 *conn, rowid_t id, int v){
 	const int qlen=256;
 	char query[qlen];
 	if(v<0)
-		snprintf(query,qlen,"UPDATE Entry SET Viewed=NOT Viewed WHERE EntryID=%lld",id);
+		nb_qnprintf(query,qlen,"UPDATE Entry SET Viewed=NOT Viewed WHERE EntryID=%lld",id);
 	else
-		snprintf(query,qlen,"UPDATE Entry SET Viewed=%d WHERE EntryID=%lld",v,id);
+		nb_qnprintf(query,qlen,"UPDATE Entry SET Viewed=%d WHERE EntryID=%lld",v,id);
 	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
 }
 
 void cache_read_feed(sqlite3 *conn, rowid_t feedid){
-	char tmp[256];
+	const int tlen=256;
+	char tmp[tlen];
 	if(feedid==0){
 		nb_sqlite3_exec(conn,"UPDATE Entry SET Viewed=1",NULL,NULL,NULL);
 	}
 	else{
-		sprintf(tmp,"UPDATE Entry SET Viewed=1 WHERE FeedID=%lld",feedid);
+		nb_qnprintf(tmp,tlen,"UPDATE Entry SET Viewed=1 WHERE FeedID=%lld",feedid);
 		nb_sqlite3_exec(conn,tmp,NULL,NULL,NULL);
 	}
 }

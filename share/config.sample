@@ -1,0 +1,75 @@
+###### Sample configuration for newsbaoter ######
+#### These may or may not be the default values.
+
+### Unbinds a key mapping
+## arg1: the key to unbind
+unbind-key      o
+
+### Binds a key mapping
+## arg1: the key to bind
+## arg2: the operation
+##       One of: exit, next, prev, select, reload-all,
+##               mark-feed-read, mark-all-feeds-read,
+##               toggle-article-read.
+bind-key        O       select
+
+### Periodically reload feeds automatically
+## arg1: yes|no
+auto-reload     yes
+
+### Time in minutes to wait before reloading feeds
+## arg1: number of minutes
+reload-time     30
+
+### Number of times to retry failed downloads
+## arg1: integer
+download-retries 1
+
+### Number of simultaneous downloads
+## arg1: integer
+reload-threads 5
+
+### Enable downloading through a proxy
+## arg1: the proxy URL
+##       See: http://curl.haxx.se/libcurl/c/CURLOPT_PROXY.html
+proxy socks5://localhost:1234
+
+### Beep when new unread articles are fetched
+## arg1: yes|no
+notify-beep     yes
+
+### Change the color scheme
+## arg1: in what position/state[1] to apply the color
+## arg2: foreground color[2]
+## arg3: background color
+## arg4..n: zero or more attributes[3] (space separated)
+## [1]: One of: listnormal, listfocus, listnormal_unread,
+##              listfocus_unread, info, article, background.
+##              Note: article and background are currently
+##                    unimplemented.
+## [2]: One of: black, red, green, yellow, blue, magenta,
+##              cyan, white, or colorNNN where NNN is the
+##              decimal number between 0 and 255. See:
+##    http://www.calmar.ws/vim/256-xterm-24bit-rgb-color-chart.html
+## [3]: One of: standout, underline, reverse, blink, dim,
+##              bold, protect, invis.
+##      See: curs_attr(3X)
+color background          color252 black
+color listnormal          color252 black
+color listfocus           color217 color239 bold
+color listnormal_unread   color222 black
+color listfocus_unread    color222 color239 bold
+color info                color210 color235
+color article             color252 black
+
+### Ask for confirmation before exiting
+## arg1: yes|no
+confirm-exit yes
+
+### Display feeds which contain no unread articles
+## arg1: yes|no
+show-read-feeds no
+
+### Display articles which have been previously read
+## arg1: yes|no
+show-read-articles no

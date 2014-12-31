@@ -101,3 +101,16 @@ int toggle_read_ipc(struct mainwindow *mw, int id){
 	}
 	return request_list_update(mw);
 }
+
+int next_unread_ipc(struct mainwindow *mw, int id){
+	ipcinfo ii=IPCVAL_NEXT_UNREAD;
+	write(mw->outfd[1],&ii,sizeof(ii));
+	write(mw->outfd[1],&id,sizeof(id));
+	read(mw->infd[0],&id,sizeof(id));
+	read(mw->infd[0],&ii,sizeof(ii));
+	if(ii!=IPCVAL_DONE){
+		/* TODO: error? */
+		return 1;
+	}
+	return request_list_update(mw);
+}

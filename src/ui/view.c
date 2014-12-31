@@ -75,6 +75,21 @@ int next_item(struct mainwindow *mw){
 	return KH_RET_UPDATE;
 }
 
+int next_unread_item(struct mainwindow *mw){
+	int i;
+	int found=-1;
+	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
+	for(i=cursor_i;i<=content_bw_max;i++){
+		if(mw->data.lv[i].unread){
+			found=cursor_i=i;
+		}
+	}
+	if(found<0)
+		next_unread_ipc(mw,cursor_i);
+	restyle_focus_item(FI_STYLE(CP_LISTFOCUS));
+	return KH_RET_UPDATE;
+}
+
 int prev_item(struct mainwindow *mw){
 	restyle_focus_item(FI_STYLE(CP_LISTNORMAL));
 	if(cursor_i>0)
@@ -112,6 +127,7 @@ int refresh_all(struct mainwindow *mw){
 
 	write(mw->outfd[1],&ii,sizeof(ii));
 	mvwaddstr(foot_w,0,FOOT_WIDTH-21,"Refreshing Feeds");
+	wrefresh(foot_w);
 
 	return KH_RET_OK;
 }

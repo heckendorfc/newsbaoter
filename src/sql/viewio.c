@@ -2,11 +2,25 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <stdarg.h>
 
 #include "../config.h"
 #include "../urlparse.h"
 #include "../ui/view.h"
 #include "cache.h"
+
+int nb_qnprintf(char *s, int n, char *fmt, ...){
+	int cnt;
+	va_list args;
+	va_start(args, fmt);
+	cnt = vsnprintf(s, n, fmt, args);
+	va_end(args);
+	if(cnt>=n-1){
+		fprintf(stderr,"Query buffer overflow: %s\n",s);
+		exit(2);
+	}
+	return cnt;
+}
 
 static int get_long_cb(void *data, int n_col, char **row, char **titles){
 	*((long*)data)=strtol(row[0]?row[0]:"0",NULL,10);
@@ -73,6 +87,7 @@ static int write_feed_line(struct listview *lv, int len, int width, int start_in
 	const int qlen=256;
 	char query[qlen];
 	feed_list_arg fla = {.lv=lv, .len=width, .ind=0};
+	const int olen=len;
 
 	if(start_ind==0){
 		nb_sqlite3_exec(db,"SELECT \"Unread Articles\",\"None\",0,COUNT(Viewed),0 FROM Entry WHERE Viewed=0",feed_line_cb,&fla,NULL);
@@ -82,13 +97,13 @@ static int write_feed_line(struct listview *lv, int len, int width, int start_in
 		start_ind--;
 	}
 
-	snprintf(query,qlen,"SELECT Feed.Title,Feed.URL,SUM(Entry.Viewed),COUNT(Entry.Viewed),Feed.FeedID FROM Feed,Entry WHERE Feed.FeedID=Entry.FeedID %s GROUP BY Feed.FeedID LIMIT %d,%d",global_config.show_read_feeds?"":"AND Viewed=0",start_ind,len);
+	nb_qnprintf(query,qlen,"SELECT Feed.Title,Feed.URL,SUM(Entry.Viewed),COUNT(Entry.Viewed),Feed.FeedID FROM Feed,Entry WHERE Feed.FeedID=Entry.FeedID %s GROUP BY Feed.FeedID LIMIT %d,%d",global_config.show_read_feeds?"":"AND Viewed=0",start_ind,len);
 
 	nb_sqlite3_exec(db,query,feed_line_cb,&fla,NULL);
 /*
 	if(fla.ind>=len){
 		long count=0;
-		snprintf(query,qlen,"SELECT COUNT(Feed.FeedID) FROM Feed WHERE FeedID IN (SELECT FeedID FROM Feed %s LIMIT %d,%d)",global_config.show_read_feeds?"":", Entry WHERE Feed.FeedID=Entry.FeedID AND Viewed=0",start_ind+len,len);
+		nb_qnprintf(query,qlen,"SELECT COUNT(Feed.FeedID) FROM Feed WHERE FeedID IN (SELECT FeedID FROM Feed %s LIMIT %d,%d)",global_config.show_read_feeds?"":", Entry WHERE Feed.FeedID=Entry.FeedID AND Viewed=0",start_ind+len,len);
 		nb_sqlite3_exec(db,query,get_long_cb,&count,NULL);
 		return count==0;
 	}
@@ -96,7 +111,7 @@ static int write_feed_line(struct listview *lv, int len, int width, int start_in
 	if(fla.ind==0)
 		return 1;
 
-	for(;fla.ind<len;fla.ind++)
+	for(;fla.ind<olen;fla.ind++)
 		lv[fla.ind].line[0]=0;
 
 	return 0;
@@ -129,6 +144,11 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 	strftime(tmp,tsize,"  %d %b  ",&tp);
 	off+=chars_to_widechars(ela->lv[ela->ind].line+off,tmp,ela->len-off);
 
+	if(n_col>4){ /* Typically, feed title */
+		snprintf(tmp,tsize,"%s | ",row[4]);
+		off+=chars_to_widechars(ela->lv[ela->ind].line+off,tmp,ela->len-off);
+	}
+
 	off+=chars_to_widechars(ela->lv[ela->ind].line+off,row[0],ela->len-off);
 
 	ela->lv[ela->ind].id=strtol(row[3],NULL,10);
@@ -144,10 +164,11 @@ static int write_entry_line(struct listview *lv, int len, int width, int feedid,
 	entry_list_arg ela = {.lv=lv, .len=width, .ind=0};
 
 	if(feedid>0){
-		snprintf(query,qlen,"SELECT Title,Viewed,PubDate,EntryID FROM Entry WHERE FeedID=%d %s ORDER BY PubDate DESC LIMIT %d,%d",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind,len);
+		nb_qnprintf(query,qlen,"SELECT Title,Viewed,PubDate,EntryID FROM Entry WHERE FeedID=%d %s ORDER BY PubDate DESC LIMIT %d,%d",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind,len);
 	}
 	else{ /* Aggregation of unread entries */
-		snprintf(query,qlen,"SELECT Title,Viewed,PubDate,EntryID FROM Entry WHERE Viewed=0 ORDER BY PubDate DESC LIMIT %d,%d",start_ind,len);
+		nb_qnprintf(query,qlen,"SELECT Entry.Title,Entry.Viewed,Entry.PubDate,Entry.EntryID,Feed.Title FROM Entry,Feed WHERE Entry.FeedID=Feed.FeedID AND Viewed=0 ORDER BY Entry.PubDate DESC LIMIT %d,%d",start_ind,len);
+		//nb_qnprintf(query,qlen,"SELECT Title,Viewed,PubDate,EntryID FROM Entry WHERE Viewed=0 ORDER BY PubDate DESC LIMIT %d,%d",start_ind,len);
 	}
 
 	nb_sqlite3_exec(db,query,entry_line_cb,&ela,NULL);
@@ -156,10 +177,10 @@ static int write_entry_line(struct listview *lv, int len, int width, int feedid,
 	if(ela.ind>=len){
 		long count;
 		if(feedid>0){
-			snprintf(query,qlen,"SELECT COUNT(EntryID) FROM Entry WHERE EntryID IN (SELECT EntryID From Entry WHERE FeedID=%d %s ORDER BY PubDate DESC LIMIT %d,%d)",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind+len,1);
+			nb_qnprintf(query,qlen,"SELECT COUNT(EntryID) FROM Entry WHERE EntryID IN (SELECT EntryID From Entry WHERE FeedID=%d %s ORDER BY PubDate DESC LIMIT %d,%d)",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind+len,1);
 		}
 		else{ // Aggregation of unread entries
-			snprintf(query,qlen,"SELECT COUNT(EntryID) FROM Entry WHERE EntryID IN (SELECT EntryID FROM Entry WHERE Viewed=0 ORDER BY PubDate DESC LIMIT %d,%d)",start_ind+len,len);
+			nb_qnprintf(query,qlen,"SELECT COUNT(EntryID) FROM Entry WHERE EntryID IN (SELECT EntryID FROM Entry WHERE Viewed=0 ORDER BY PubDate DESC LIMIT %d,%d)",start_ind+len,len);
 		}
 		nb_sqlite3_exec(db,query,get_long_cb,&count,NULL);
 		return count==0;
@@ -197,7 +218,7 @@ static void set_title_string(struct mainwindow *mw, char *tail, sqlite3 *db){
 	if(mw->ctx_type==CTX_FEEDS)
 		head="Your Feeds";
 	else if(mw->ctx_type==CTX_ENTRIES){
-		snprintf(tmp,tlen,"SELECT Title FROM Feed WHERE FeedID=%d",mw->ctx_id);
+		nb_qnprintf(tmp,tlen,"SELECT Title FROM Feed WHERE FeedID=%d",mw->ctx_id);
 		nb_sqlite3_exec(db,tmp,set_string_cb,&ssa,NULL);
 		head=shead;
 	}
@@ -258,7 +279,7 @@ int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 
 
 	cache_toggle_read_entry(db,id,1);
 
-	snprintf(query,qlen,"SELECT * FROM PubEntry WHERE EntryID=%d",id);
+	nb_qnprintf(query,qlen,"SELECT * FROM PubEntry WHERE EntryID=%d",id);
 	nb_sqlite3_exec(db,query,write_entry_cb,&wi,NULL);
 
 	return 0;
@@ -268,4 +289,8 @@ int get_num_unread(sqlite3 *db){
 	long num;
 	nb_sqlite3_exec(db,"SELECT COUNT(EntryID) FROM Entry WHERE Viewed=0",get_long_cb,&num,NULL);
 	return num;
+}
+
+int cache_next_unread(struct mainwindow *mw, int id, sqlite3 *db){
+	return 0;
 }

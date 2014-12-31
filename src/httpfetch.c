@@ -171,7 +171,7 @@ void fetch_urls(struct urllist *ul, const int npara, void *db){
 				xp_outf(xh[idx].doc,na);
 				*/
 				//ula[idx]->data.doc=xh[idx].doc;
-				ula[idx]->data.info.feedid=xh[idx].feedid;
+				//ula[idx]->data.info.feedid=xh[idx].feedid;
 			}
 		}
 

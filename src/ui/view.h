@@ -4,6 +4,7 @@
 #include "ui_common.h"
 
 int next_item(struct mainwindow *mw);
+int next_unread_item(struct mainwindow *mw);
 int prev_item(struct mainwindow *mw);
 int select_item(struct mainwindow *mw);
 int context_exit(struct mainwindow *mw);

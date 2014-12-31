@@ -8,7 +8,6 @@ struct urlitem{
 	char *url;
 	union{
 		xmlDocPtr doc;
-		rowid_t feedid;
 	}info;
 	int n_httperr;
 };
