@@ -21,6 +21,11 @@ static int create_db(sqlite3 *conn){
 		"AuthorEmail text, "
 		"ImageURL text, "
 		"ImageText text)",NULL,NULL,NULL)!=SQLITE_OK ||
+	sqlite3_exec(conn,"CREATE TABLE Category(CategoryID integer primary key, "
+		"Name text not null)",NULL,NULL,NULL)!=SQLITE_OK ||
+	sqlite3_exec(conn,"CREATE TABLE FeedCategory(FeedCategoryID integer primary key, "
+		"CategoryID integer, "
+		"FeedID integer)",NULL,NULL,NULL)!=SQLITE_OK ||
 	sqlite3_exec(conn,"CREATE TABLE Entry(EntryID integer primary key, "
 		"FeedID integer, "
 		"Viewed integer not null default 0, "
@@ -33,7 +38,7 @@ static int create_db(sqlite3 *conn){
 		"AuthorEmail text, "
 		"Description text, "
 		"Content text)",NULL,NULL,NULL)!=SQLITE_OK ||
-	sqlite3_exec(conn,"CREATE VIEW PubEntry AS SELECT EntryID,FeedID,Title,datetime(PubDate,'unixepoch') AS Date,URL,AuthorName,AuthorEmail,Description,Content FROM Entry ORDER BY PubDate DESC",NULL,NULL,NULL)!=SQLITE_OK)
+	sqlite3_exec(conn,"CREATE VIEW PubEntry AS SELECT EntryID,FeedID,Title,datetime(PubDate,'unixepoch') AS Date,URL,AuthorName,AuthorEmail,Description,Content FROM Entry",NULL,NULL,NULL)!=SQLITE_OK)
 		return 1;
 	return 0;
 }

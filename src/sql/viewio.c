@@ -8,25 +8,9 @@
 #include "../ui/view.h"
 #include "cache.h"
 
-static struct urllist* get_urllist_start(struct urllist *ul, struct mainwindow *mw){
-	int sn=mw->page*mw->body_len;
-
-	/* skip down to the current page */
-	while(ul && sn){
-		sn--;
-		ul=ul->next;
-	}
-
-	if(mw->ctx_type==CTX_ENTRIES){
-		sn=mw->ctx_id;
-		/* skip down to the current id */
-		while(ul && sn){
-			sn--;
-			ul=ul->next;
-		}
-	}
-
-	return ul;
+static int get_long_cb(void *data, int n_col, char **row, char **titles){
+	*((long*)data)=strtol(row[0]?row[0]:"0",NULL,10);
+	return SQLITE_OK;
 }
 
 typedef struct feed_list_arg{
@@ -88,13 +72,34 @@ static int feed_line_cb(void *data, int n_col, char **row, char **titles){
 static int write_feed_line(struct listview *lv, int len, int width, int start_ind, sqlite3 *db){
 	const int qlen=256;
 	char query[qlen];
-	feed_list_arg fla = {.lv=lv, .len=len, .ind=0};
+	feed_list_arg fla = {.lv=lv, .len=width, .ind=0};
+
+	if(start_ind==0){
+		nb_sqlite3_exec(db,"SELECT \"Unread Articles\",\"None\",0,COUNT(Viewed),0 FROM Entry WHERE Viewed=0",feed_line_cb,&fla,NULL);
+		len--;
+	}
+	else{
+		start_ind--;
+	}
 
 	snprintf(query,qlen,"SELECT Feed.Title,Feed.URL,SUM(Entry.Viewed),COUNT(Entry.Viewed),Feed.FeedID FROM Feed,Entry WHERE Feed.FeedID=Entry.FeedID %s GROUP BY Feed.FeedID LIMIT %d,%d",global_config.show_read_feeds?"":"AND Viewed=0",start_ind,len);
 
 	nb_sqlite3_exec(db,query,feed_line_cb,&fla,NULL);
+/*
+	if(fla.ind>=len){
+		long count=0;
+		snprintf(query,qlen,"SELECT COUNT(Feed.FeedID) FROM Feed WHERE FeedID IN (SELECT FeedID FROM Feed %s LIMIT %d,%d)",global_config.show_read_feeds?"":", Entry WHERE Feed.FeedID=Entry.FeedID AND Viewed=0",start_ind+len,len);
+		nb_sqlite3_exec(db,query,get_long_cb,&count,NULL);
+		return count==0;
+	}
+*/
+	if(fla.ind==0)
+		return 1;
 
-	return fla.ind;
+	for(;fla.ind<len;fla.ind++)
+		lv[fla.ind].line[0]=0;
+
+	return 0;
 }
 
 
@@ -136,40 +141,38 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 static int write_entry_line(struct listview *lv, int len, int width, int feedid, int start_ind, sqlite3 *db){
 	const int qlen=256;
 	char query[qlen];
-	entry_list_arg ela = {.lv=lv, .len=len, .ind=0};
+	entry_list_arg ela = {.lv=lv, .len=width, .ind=0};
 
-	snprintf(query,qlen,"SELECT Entry.Title,Entry.Viewed,Entry.PubDate,Entry.EntryID FROM Feed,Entry WHERE Feed.FeedID=%d AND Feed.FeedID=Entry.FeedID %s LIMIT %d,%d",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind,len);
+	if(feedid>0){
+		snprintf(query,qlen,"SELECT Title,Viewed,PubDate,EntryID FROM Entry WHERE FeedID=%d %s ORDER BY PubDate DESC LIMIT %d,%d",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind,len);
+	}
+	else{ /* Aggregation of unread entries */
+		snprintf(query,qlen,"SELECT Title,Viewed,PubDate,EntryID FROM Entry WHERE Viewed=0 ORDER BY PubDate DESC LIMIT %d,%d",start_ind,len);
+	}
 
 	nb_sqlite3_exec(db,query,entry_line_cb,&ela,NULL);
 
-	return ela.ind;
-}
-
 /*
-static int write_line(tchar_t *line, int len, rowid_t feedid, int type, int id, int index, sqlite3 *db){
-	int off=0;
-	const size_t tsize=256;
-	char tmp[tsize];
-	int r;
-
-	line[0]=0;
-
-	sprintf(tmp,"%3d  ",index+1);
-	off=chars_to_widechars(line,tmp,len);
-
-	if(type==CTX_ENTRIES){
-		r=write_entry_line(line+off,len-off,feedid,db);
+	if(ela.ind>=len){
+		long count;
+		if(feedid>0){
+			snprintf(query,qlen,"SELECT COUNT(EntryID) FROM Entry WHERE EntryID IN (SELECT EntryID From Entry WHERE FeedID=%d %s ORDER BY PubDate DESC LIMIT %d,%d)",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind+len,1);
+		}
+		else{ // Aggregation of unread entries
+			snprintf(query,qlen,"SELECT COUNT(EntryID) FROM Entry WHERE EntryID IN (SELECT EntryID FROM Entry WHERE Viewed=0 ORDER BY PubDate DESC LIMIT %d,%d)",start_ind+len,len);
+		}
+		nb_sqlite3_exec(db,query,get_long_cb,&count,NULL);
+		return count==0;
 	}
-	else{
-		r=write_feed_line(line+off,len-off,feedid,db);
-	}
-
-	if(r)
-		line[0]=0;
-
-	return r;
-}
 */
+	if(ela.ind==0)
+		return 1;
+
+	for(;ela.ind<len;ela.ind++)
+		lv[ela.ind].line[0]=0;
+
+	return 0;
+}
 
 struct set_str_args{
 	char *s;
@@ -184,12 +187,12 @@ static int set_string_cb(void *data, int n_col, char **row, char **titles){
 	return SQLITE_OK;
 }
 
-static void set_title_string(struct urllist *ul, struct mainwindow *mw, char *tail, sqlite3 *db){
+static void set_title_string(struct mainwindow *mw, char *tail, sqlite3 *db){
 	const int tlen=256;
 	char tmp[tlen];
 	char shead[tlen];
 	const char *head="";
-	struct set_str_args ssa={.s=tmp, .len=tlen};
+	struct set_str_args ssa={.s=shead, .len=tlen};
 
 	if(mw->ctx_type==CTX_FEEDS)
 		head="Your Feeds";
@@ -205,20 +208,10 @@ static void set_title_string(struct urllist *ul, struct mainwindow *mw, char *ta
 }
 
 int cache_gen_lines(void *uld, struct mainwindow *mw, sqlite3 *db){
-	int i,r=1;
+	int r=1;
 	const int tlen=256;
 	char tmp[tlen];
-	struct urllist *ul = get_urllist_start(uld,mw);
 	int poff=mw->page*mw->body_len;
-
-	if(ul==NULL)
-		return 1;
-
-	snprintf(tmp,tlen,"(Page %d)",mw->page+1);
-	set_title_string(ul,mw,tmp,db);
-
-	for(i=0;i<mw->body_len;i++)
-		mw->data.lv[i].line[0]=0;
 
 	if(mw->ctx_type==CTX_FEEDS){
 		r=write_feed_line(mw->data.lv,mw->body_len,mw->width,poff,db);
@@ -226,22 +219,13 @@ int cache_gen_lines(void *uld, struct mainwindow *mw, sqlite3 *db){
 	else if(mw->ctx_type==CTX_ENTRIES){
 		r=write_entry_line(mw->data.lv,mw->body_len,mw->width,mw->ctx_id,poff,db);
 	}
-	/*
-	for(r=i=0;i<mw->body_len && ul && !r;i++){
-		r=write_line(mw->data.lv,mw->width,ul->data.info.feedid,mw->ctx_type,mw->ctx_id,i,db);
-			if(r){
-				snprintf(tmp,tlen,"%3d  (F) %s",i+1,ul->data.url);
-				chars_to_widechars(mw->data.lv[i].line,tmp,mw->width);
-			}
-			ul=ul->next;
-			r=0;
+
+	if(!r){
+		snprintf(tmp,tlen,"(Page %d)",mw->page+1);
+		set_title_string(mw,tmp,db);
 	}
 
-	for(;i<mw->body_len;i++)
-		mw->data.lv[i].line[0]=0;
-	*/
-
-	return !r;
+	return r;
 }
 
 struct write_entry_info{
@@ -278,12 +262,6 @@ int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 
 	nb_sqlite3_exec(db,query,write_entry_cb,&wi,NULL);
 
 	return 0;
-}
-
-
-static int get_long_cb(void *data, int n_col, char **row, char **titles){
-	*((long*)data)=strtol(row[0]?row[0]:"0",NULL,10);
-	return SQLITE_OK;
 }
 
 int get_num_unread(sqlite3 *db){
