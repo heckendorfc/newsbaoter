@@ -187,7 +187,8 @@ int context_exit(struct mainwindow *mw){
 void clear_display(){
 	int i;
 
-	erase();
+	clear();
+	//erase();
 	refresh();
 	return;
 

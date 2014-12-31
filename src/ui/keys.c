@@ -2,15 +2,19 @@
 #include <stdio.h>
 #include <ncurses.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "../hash.h"
 #include "keys.h"
 #include "view.h"
+#include "util.h"
 
 #define KHN(n) handle_ ## n
 #define KHF(n) {#n , KHN(n) }
 
 /* Key handlers */
+
+int handle_print_key_pairs(struct mainwindow *mw);
 
 int handle_exit(struct mainwindow *mw){
 	return context_exit(mw);
@@ -75,12 +79,13 @@ static struct keylist default_keys[]={
 	{'L',KHN(low_item)},
 	{'M',KHN(mid_item)},
 	{'H',KHN(high_item)},
-	{KEY_ENTER,KHN(select)},
+	//{KEY_ENTER,KHN(select)},
 	{'o',KHN(select)},
 	{'R',KHN(refresh_all)},
 	{'A',KHN(catchup_feed)},
 	{'C',KHN(catchup_all)},
 	{'N',KHN(toggle_read)},
+	{'?',KHN(print_key_pairs)},
 	{'\0',NULL}
 };
 
@@ -101,6 +106,7 @@ static struct handlerlist handler_names[]={
 	{"mark-feed-read",KHN(catchup_feed)},
 	{"mark-all-feeds-read",KHN(catchup_all)},
 	{"toggle-article-read",KHN(toggle_read)},
+	{"help",KHN(print_key_pairs)},
 	{NULL,NULL}
 };
 
@@ -140,6 +146,40 @@ int process_key(int c, struct mainwindow *mw){
 		return kh(mw);
 
 	return KH_RET_NO_HANDLER;
+}
+
+int handle_print_key_pairs(struct mainwindow *mw){
+	int off=0;
+	void *p;
+	char *name;
+	int i;
+	const int tlen=256;
+	char tmp[tlen];
+	int fd;
+	int pid;
+	tchar_t c;
+
+	pipe_to_pager(mw,&pid,&fd);
+
+	i=snprintf(tmp,tlen,"newsbaoter key bindings\n\n");
+	write(fd,tmp,i);
+
+	while((p=next_uikey_pair(&off,&name))){
+		for(i=0;handler_names[i].handler;i++){
+			if(handler_names[i].handler==p){
+				c=strtol(name,NULL,16);
+				i=snprintf(tmp,tlen,"%lc\t%s\n",c,handler_names[i].name);
+				write(fd,tmp,i);
+				break;
+			}
+		}
+	}
+
+	close(fd);
+
+	wait_for_pager(pid);
+
+	return KH_RET_UPDATE;
 }
 
 void bind_defaults(){

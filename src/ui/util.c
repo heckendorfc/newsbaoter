@@ -7,15 +7,25 @@
 #include "util.h"
 #include "../common_defs.h"
 
-static void pipe_to_pager(struct mainwindow *mw, int id){
+void wait_for_pager(int pid){
+	int status;
+	pid_t ret;
+
+	do{
+		ret=waitpid(pid,&status,0);
+		if(ret==-1 && errno!=EINTR)
+			break;
+	}while(!(ret==pid && (WIFEXITED(status) || WIFSIGNALED(status))));
+}
+
+int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 	int pipefd[2];
-	int pid;
 
 	pipe(pipefd);
 
-	pid=fork();
+	*pid=fork();
 
-	if(pid==0){ /* child */
+	if(*pid==0){ /* child */
 		char *pager="/usr/bin/less"; /* TODO: find path via cmake? */
 		char *args[2]={pager,(char*)0};
 		dup2(pipefd[0],0);
@@ -25,28 +35,19 @@ static void pipe_to_pager(struct mainwindow *mw, int id){
 			fprintf(stderr,"Error spawning %s\n",args[0]);
 		exit(1);
 	}
-	else if(pid>0){ /* parent */
-		int status;
-		pid_t ret;
-
+	else if(*pid>0){ /* parent */
 		close(pipefd[0]); /* we don't need the read end here */
 
-		write(mw->outfd[1],&id,sizeof(id));
-		write(mw->outfd[1],pipefd+1,sizeof(*pipefd));
-
-		do{
-			ret=waitpid(pid,&status,0);
-			if(ret==-1 && errno!=EINTR)
-				break;
-		}while(!(ret==pid && (WIFEXITED(status) || WIFSIGNALED(status))));
-
-		//close(pipefd[1]); /* thread closes? */
+		*fd=pipefd[1];
 	}
 	else{ /* error */
+		return 1;
 	}
+	return 0;
 }
 
 int pipe_entry(struct mainwindow *mw, int id){
+	int pid,fd;
 	ipcinfo ii=IPCVAL_WRITE_ENTRY;
 	def_prog_mode();
 	endwin();
@@ -55,7 +56,10 @@ int pipe_entry(struct mainwindow *mw, int id){
 
 	//int fd=2;
 	//write(mw->outfd[1],&fd,sizeof(fd));
-	pipe_to_pager(mw,id);
+	pipe_to_pager(mw,&pid,&fd);
+	write(mw->outfd[1],&id,sizeof(id));
+	write(mw->outfd[1],&fd,sizeof(fd));
+	wait_for_pager(pid);
 
 	read(mw->infd[0],&ii,sizeof(ii));
 	if(ii!=IPCVAL_DONE){

@@ -73,6 +73,23 @@ static int find_hash(const char *n, uint32_t k, var_t **tab, int size){
 	return ret;
 }
 
+static void* next_hash_pair(int *offset, var_t **tab, int size, char**name){
+	int i;
+
+	if(*offset<0)
+		*offset=0;
+
+	for(i=*offset;i<size;i++){
+		if(tab[i] && tab[i]!=&deleted){
+			*offset=i+1;
+			*name=tab[i]->name;
+			return tab[i]->value;
+		}
+	}
+
+	return NULL;
+}
+
 void set_hash_var(const char *name, void *value, var_t **tab, int *size, int *cap){
 	uint32_t k;
 	int index;
@@ -158,4 +175,8 @@ void unset_uikey(const char *name){
 
 void* get_uikey(const char *name){
 	return get_hash_var(name,uikey_tab,uikey_tab_size);
+}
+
+void* next_uikey_pair(int *offset, char **name){
+	return next_hash_pair(offset,uikey_tab,uikey_tab_size,name);
 }
