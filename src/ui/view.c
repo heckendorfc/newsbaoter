@@ -1,4 +1,5 @@
 //#include <sqlite3.h>
+#include <sys/select.h>
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <locale.h>
@@ -143,12 +144,16 @@ int select_item(struct mainwindow *mw){
 	return KH_RET_UPDATE;
 }
 
+void notify_refresh_footer(struct mainwindow *mw){
+	mvwaddstr(foot_w,0,FOOT_WIDTH-21,"Refreshing Feeds");
+	wrefresh(foot_w);
+}
+
 int refresh_all(struct mainwindow *mw){
 	ipcinfo ii=IPCVAL_REFRESH_ALL;
 
 	write(mw->outfd[1],&ii,sizeof(ii));
-	mvwaddstr(foot_w,0,FOOT_WIDTH-21,"Refreshing Feeds");
-	wrefresh(foot_w);
+	notify_refresh_footer(mw);
 
 	return KH_RET_OK;
 }
@@ -376,6 +381,7 @@ struct mainwindow* setup_ui(){
 	(void) cbreak();       /* take input chars one at a time, no wait for \n */
 	noecho();
 	//(void) echo();         /* echo input - in color */
+	timeout(0);
 
 	start_color();
 	set_default_colors();
@@ -387,6 +393,8 @@ struct mainwindow* setup_ui(){
 	INIT_MEM(mw,1);
 	memset(mw,0,sizeof(*mw));
 
+	pthread_mutex_init(&mw->viewtex,NULL);
+
 	resize_mainwindow(mw);
 
 	bind_defaults();
@@ -397,33 +405,54 @@ struct mainwindow* setup_ui(){
 		; /* TODO: error */
 	if(pipe(mw->infd)!=0)
 		; /* TODO: error */
+	if(pipe(mw->sidefd)!=0)
+		; /* TODO: error */
 	return mw;
 }
 
 void run_ui(struct mainwindow *mw){
 	int ch;
 	int ret;
+	fd_set fdread;
+	int sret;
+	ipcinfo ii;
 
-	while((ch = getch())){
-		ret=process_key(ch,mw);
-		if(ret==KH_RET_EXIT){
-			if(global_config.confirm_exit){
-				wcolor_set(foot_w,CP_ALERT,NULL);
-				mvwaddstr(foot_w,0,0,"Confirm exit? (y/[n])");
-				wrefresh(foot_w);
-				if(getch()=='y'){
+	while(1){
+		FD_ZERO(&fdread);
+		FD_SET(mw->sidefd[0],&fdread);
+		FD_SET(0,&fdread);
+		sret=select(mw->sidefd[0]+1,&fdread,NULL,NULL,NULL);
+
+		if(FD_ISSET(0,&fdread)){
+			ch = getch();
+
+			ret=process_key(ch,mw);
+			if(ret==KH_RET_EXIT){
+				if(global_config.confirm_exit){
+					wcolor_set(foot_w,CP_ALERT,NULL);
+					mvwaddstr(foot_w,0,0,"Confirm exit? (y/[n])");
+					wrefresh(foot_w);
+					timeout(-1);
+					if(getch()=='y'){
+						break;
+					}
+					else{
+						wcolor_set(foot_w,CP_INFO,NULL);
+						update_view(mw);
+					}
+					timeout(0);
+				}
+				else
 					break;
-				}
-				else{
-					wcolor_set(foot_w,CP_INFO,NULL);
-					update_view(mw);
-				}
 			}
-			else
-				break;
+			else if(ret==KH_RET_UPDATE)
+				update_view(mw);
 		}
-		else if(ret==KH_RET_UPDATE)
-			update_view(mw);
+		if(FD_ISSET(mw->sidefd[0],&fdread)){
+			int rr=read(mw->sidefd[0],&ii,sizeof(ii));
+			if(rr>0 && ii==IPCVAL_UPDATE_REQUEST)
+				update_view(mw);
+		}
 	}
 }
 

@@ -177,7 +177,7 @@ int handle_print_key_pairs(struct mainwindow *mw){
 
 	close(fd);
 
-	wait_for_pager(pid);
+	wait_for_pager(mw,pid);
 
 	return KH_RET_UPDATE;
 }

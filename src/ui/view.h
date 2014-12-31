@@ -3,6 +3,7 @@
 
 #include "ui_common.h"
 
+void notify_refresh_footer(struct mainwindow *mw);
 int next_item(struct mainwindow *mw);
 int high_item(struct mainwindow *mw);
 int mid_item(struct mainwindow *mw);

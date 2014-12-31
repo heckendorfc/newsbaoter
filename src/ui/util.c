@@ -7,7 +7,7 @@
 #include "util.h"
 #include "../common_defs.h"
 
-void wait_for_pager(int pid){
+void wait_for_pager(struct mainwindow *mw, int pid){
 	int status;
 	pid_t ret;
 
@@ -16,10 +16,14 @@ void wait_for_pager(int pid){
 		if(ret==-1 && errno!=EINTR)
 			break;
 	}while(!(ret==pid && (WIFEXITED(status) || WIFSIGNALED(status))));
+
+	pthread_mutex_unlock(&mw->viewtex);
 }
 
 int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 	int pipefd[2];
+
+	pthread_mutex_lock(&mw->viewtex);
 
 	pipe(pipefd);
 
@@ -59,7 +63,7 @@ int pipe_entry(struct mainwindow *mw, int id){
 	pipe_to_pager(mw,&pid,&fd);
 	write(mw->outfd[1],&id,sizeof(id));
 	write(mw->outfd[1],&fd,sizeof(fd));
-	wait_for_pager(pid);
+	wait_for_pager(mw,pid);
 
 	read(mw->infd[0],&ii,sizeof(ii));
 	if(ii!=IPCVAL_DONE){

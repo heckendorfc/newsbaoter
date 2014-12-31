@@ -1,6 +1,7 @@
 #ifndef NBUI_COMMON_H
 #define NBUI_COMMON_H
 
+#include <pthread.h>
 #include <wchar.h>
 
 typedef wchar_t tchar_t;
@@ -36,6 +37,7 @@ enum ipcinfo_val{
 	IPCVAL_READ_FEED,
 	IPCVAL_TOGGLE_READ,
 	IPCVAL_NEXT_UNREAD,
+	IPCVAL_FETCH_DONE,
 	IPCVAL_DONE,
 	IPCVAL_EOL,
 };
@@ -50,9 +52,11 @@ struct mainwindow{
 	int page;
 	int ctx_type;
 	int ctx_id;
-	int outfd[2];
-	int infd[2];
+	int outfd[2]; /* ui -> db */
+	int infd[2]; /* db -> ui response */
+	int sidefd[2]; /* io -> ui update request */
 	int beep_request;
+	pthread_mutex_t viewtex; /* to avoid doing things while in pager mode */
 	union{
 		struct listview *lv;
 		struct pagerview *pv;
