@@ -182,6 +182,32 @@ int handle_print_key_pairs(struct mainwindow *mw){
 	return KH_RET_UPDATE;
 }
 
+void set_foot_help_string(char *s, int len){
+	int off=0;
+	void *p;
+	char *name;
+	tchar_t c;
+	tchar_t exit_key,help_key;
+	tchar_t *d=NULL;
+
+	exit_key=help_key=' ';
+
+	while((p=next_uikey_pair(&off,&name))){
+		d=NULL;
+		if(p==handle_exit){
+			d=&exit_key;
+		}
+		else if(p==handle_print_key_pairs){
+			d=&help_key;
+		}
+		if(d){
+			c=strtol(name,NULL,16);
+			*d=c;
+		}
+	}
+	snprintf(s,len,"Press: %lc to exit, %lc for help",exit_key,help_key);
+}
+
 void bind_defaults(){
 	int i;
 

@@ -9,6 +9,7 @@
 #include "config.h"
 #include "ui/view.h"
 #include "ui/ui_common.h"
+#include "ui/keys.h"
 #include "sql/cache.h"
 
 struct io_data{
@@ -134,11 +135,13 @@ int main(int argc, char **argv){
 	pthread_t ioth;
 	struct io_data iod;
 	char hs[]="Feed List";
-	char fs[]="press q to exit";
+	const int fsl=50;
+	char fs[fsl];
 
 	mw=setup_ui();
 	iod.mw=mw;
 	read_config_options_file();
+	set_foot_help_string(fs,fsl);
 	pthread_create(&ioth,NULL,iothread,&iod);
 	chars_to_widechars(mw->header,hs,mw->width);
 	chars_to_widechars(mw->footer,fs,mw->width);
