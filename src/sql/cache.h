@@ -15,5 +15,6 @@ int cache_gen_lines(void *uld, struct mainwindow *mw, sqlite3 *db);
 int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 *db);
 void cache_toggle_read_entry(sqlite3 *conn, rowid_t id, int v);
 void cache_read_feed(sqlite3 *conn, rowid_t feedid);
+int get_num_unread(sqlite3 *db);
 
 #endif

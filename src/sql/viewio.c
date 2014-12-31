@@ -3,6 +3,7 @@
 #include <time.h>
 #include <unistd.h>
 
+#include "../config.h"
 #include "../urlparse.h"
 #include "../ui/view.h"
 #include "cache.h"
@@ -89,7 +90,7 @@ static int write_feed_line(struct listview *lv, int len, int width, int start_in
 	char query[qlen];
 	feed_list_arg fla = {.lv=lv, .len=len, .ind=0};
 
-	snprintf(query,qlen,"SELECT Feed.Title,Feed.URL,SUM(Entry.Viewed),COUNT(Entry.Viewed),Feed.FeedID FROM Feed,Entry WHERE Feed.FeedID=Entry.FeedID GROUP BY Feed.FeedID LIMIT %d,%d",start_ind,len);
+	snprintf(query,qlen,"SELECT Feed.Title,Feed.URL,SUM(Entry.Viewed),COUNT(Entry.Viewed),Feed.FeedID FROM Feed,Entry WHERE Feed.FeedID=Entry.FeedID %s GROUP BY Feed.FeedID LIMIT %d,%d",global_config.show_read_feeds?"":"AND Viewed=0",start_ind,len);
 
 	nb_sqlite3_exec(db,query,feed_line_cb,&fla,NULL);
 
@@ -137,7 +138,7 @@ static int write_entry_line(struct listview *lv, int len, int width, int feedid,
 	char query[qlen];
 	entry_list_arg ela = {.lv=lv, .len=len, .ind=0};
 
-	snprintf(query,qlen,"SELECT Entry.Title,Entry.Viewed,Entry.PubDate,Entry.EntryID FROM Feed,Entry WHERE Feed.FeedID=%d AND Feed.FeedID=Entry.FeedID LIMIT %d,%d",feedid,start_ind,len);
+	snprintf(query,qlen,"SELECT Entry.Title,Entry.Viewed,Entry.PubDate,Entry.EntryID FROM Feed,Entry WHERE Feed.FeedID=%d AND Feed.FeedID=Entry.FeedID %s LIMIT %d,%d",feedid,global_config.show_read_entries?"":"AND Viewed=0",start_ind,len);
 
 	nb_sqlite3_exec(db,query,entry_line_cb,&ela,NULL);
 
@@ -277,4 +278,16 @@ int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 
 	nb_sqlite3_exec(db,query,write_entry_cb,&wi,NULL);
 
 	return 0;
+}
+
+
+static int get_long_cb(void *data, int n_col, char **row, char **titles){
+	*((long*)data)=strtol(row[0]?row[0]:"0",NULL,10);
+	return SQLITE_OK;
+}
+
+int get_num_unread(sqlite3 *db){
+	long num;
+	nb_sqlite3_exec(db,"SELECT COUNT(EntryID) FROM Entry WHERE Viewed=0",get_long_cb,&num,NULL);
+	return num;
 }

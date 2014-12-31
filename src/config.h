@@ -30,15 +30,15 @@ enum nbcolor_cp{
 #define FB_STYLE FII_STYLE((i!=cursor_i?CP_LISTNORMAL:CP_LISTFOCUS),i)
 
 struct nb_config{
-	char *proxy; /* "socks5://localhost:1234" */ /* TODO */
+	char *proxy; /* "socks5://localhost:1234" */ /* TODO (untested) */
 	int dl_retries;
 	int auto_reload;
 	int reload_time;
-	int show_read_feeds; /* TODO */
-	int show_read_entries; /* TODO */
+	int show_read_feeds;
+	int show_read_entries;
 	int parallel_reload;
 	int confirm_exit;
-	int notify_beep; /* TODO cache/xml */
+	int notify_beep; /* TODO (untested) */
 	nbcolor_t colors[CP_NULL];
 };
 

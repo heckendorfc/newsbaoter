@@ -125,6 +125,8 @@ void fetch_urls(struct urllist *ul, const int npara, void *db){
 			curl_easy_setopt(ce[i],CURLOPT_USERAGENT,"newsbaoter/0.1");
 			curl_easy_setopt(ce[i],CURLOPT_FOLLOWLOCATION,1);
 			curl_easy_setopt(ce[i],CURLOPT_URL,tul->data.url);
+			if(global_config.proxy)
+				curl_easy_setopt(ce[i],CURLOPT_PROXY,global_config.proxy);
 
 			curl_multi_add_handle(cm,ce[i]);
 
