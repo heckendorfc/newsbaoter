@@ -23,6 +23,7 @@ struct nb_config global_config={
 	.parallel_reload=5,
 	.confirm_exit=0,
 	.notify_beep=0,
+	.entry_retention=3*24*60*60,
 };
 
 int copy_str(void *d, char *next){
@@ -225,6 +226,7 @@ struct config_args{
 	{"color",NBCO(colors),copy_color},
 	{"bind-key",0x1,config_bind_key},
 	{"unbind-key",0x0,config_bind_key},
+	{"cache-retention",NBCO(entry_retention),copy_int},
 	{NULL,0,NULL}
 };
 

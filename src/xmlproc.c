@@ -392,12 +392,12 @@ static int update_entry(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 
 	udate[0]=pdate[0]=0;
 	if(ei[EFI_PDATE]){
-		strptime(ei[EFI_PDATE],"%F %T",&tp);
+		strptime(ei[EFI_PDATE],"%F %T %z",&tp);
 		strftime(pdate,20,"%s",&tp);
 		ei[EFI_PDATE]=pdate;
 	}
 	if(ei[EFI_UDATE]){
-		strptime(ei[EFI_UDATE],"%F %T",&tp);
+		strptime(ei[EFI_UDATE],"%F %T %z",&tp);
 		strftime(udate,20,"%s",&tp);
 		ei[EFI_UDATE]=udate;
 	}

@@ -39,6 +39,7 @@ struct nb_config{
 	int parallel_reload;
 	int confirm_exit;
 	int notify_beep; /* TODO (untested) */
+	int entry_retention;
 	nbcolor_t colors[CP_NULL];
 };
 

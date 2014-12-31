@@ -38,6 +38,17 @@ proxy socks5://localhost:1234
 ## arg1: yes|no
 notify-beep     yes
 
+### When to delete old articles from the cache
+## arg1: time in seconds
+##       All of the following must apply before an article
+##       is deleted:
+##          - No longer present in the source feed
+##          - Marked as unread
+##          - Published date older than this number of seconds
+##            in the past measured from the time of download
+#example: one week (in seconds)
+cache-retention 604800
+
 ### Change the color scheme
 ## arg1: in what position/state[1] to apply the color
 ## arg2: foreground color[2]

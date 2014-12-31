@@ -66,7 +66,7 @@
     <xsl:template match="a:pubDate | dc:date">
         <publishDateTime>
 			<xsl:value-of select="." />
-			<xsl:value-of select="' 00:00:00'" />
+			<xsl:value-of select="' 00:00:00 +0000'" />
         </publishDateTime>
     </xsl:template>
 

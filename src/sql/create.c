@@ -37,12 +37,25 @@ static int create_db(sqlite3 *conn){
 		"AuthorName text, "
 		"AuthorEmail text, "
 		"Description text, "
-		"Content text)",NULL,NULL,NULL)!=SQLITE_OK ||
+		"Content text, "
+		"Current integer default 1)",NULL,NULL,NULL)!=SQLITE_OK ||
 	sqlite3_exec(conn,"CREATE VIEW PubEntry AS SELECT EntryID,FeedID,Title,datetime(PubDate,'unixepoch') AS Date,URL,AuthorName,AuthorEmail,Description,Content FROM Entry",NULL,NULL,NULL)!=SQLITE_OK)
 		return 1;
 	return 0;
 }
 #define ENT_TEXT_START 5
+
+void cache_init_cleanup(sqlite3 *conn){
+	nb_sqlite3_exec(conn,"UPDATE Entry SET Current=0",NULL,NULL,NULL);
+}
+
+void cache_cleanup_old(sqlite3 *conn){
+	const int qlen=256;
+	char query[qlen];
+
+	nb_qnprintf(query,qlen,"DELETE FROM Entry WHERE Current=0 AND Viewed>0 AND PubDate<strftime('%%s','now')-%d",global_config.entry_retention);
+	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
+}
 
 rowid_t cache_update_feed(sqlite3 *conn, const char **data){
 	const int qlen=256;
@@ -140,4 +153,3 @@ void cache_read_feed(sqlite3 *conn, rowid_t feedid){
 		nb_sqlite3_exec(conn,tmp,NULL,NULL,NULL);
 	}
 }
-

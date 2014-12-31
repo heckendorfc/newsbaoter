@@ -83,9 +83,12 @@ void* iothread(void *data){
 	while(1){
 		if(iret || global_config.auto_reload){
 			long num[2];
+
+			cache_init_cleanup(db);
 			num[0]=get_num_unread(db);
 			fetch_urls(ul,parallel,db);
 			num[1]=get_num_unread(db);
+			cache_cleanup_old(db);
 
 			if(num[0]<num[1])
 				iod->mw->beep_request=1;

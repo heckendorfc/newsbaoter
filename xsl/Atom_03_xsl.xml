@@ -75,6 +75,7 @@
 			<xsl:value-of select="$day" />
 			<xsl:value-of select="' '" />
 			<xsl:value-of select="$time" />
+			<xsl:value-of select="' +0000'" />
 		</publishDateTime>
 	</xsl:template>
 	
@@ -87,6 +88,7 @@
 			<xsl:value-of select="$day" />
 			<xsl:value-of select="' '" />
 			<xsl:value-of select="$time" />
+			<xsl:value-of select="' +0000'" />
 		</lastUpdatedDateTime>
 	</xsl:template>
 
