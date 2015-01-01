@@ -47,6 +47,8 @@ static WINDOW *titl_w=NULL,*head_w=NULL,*foot_w=NULL,**body_w=NULL;
 static int bw_len=0;
 static int content_bw_max=0;
 static int cursor_i=0;
+static int backup_cursor_i=0;
+static int backup_page_num=0;
 static int newsize=0;
 
 #define redo_allocation(x,n) {if(x){REINIT_MEM(x,n);}else{INIT_MEM(x,n);}}
@@ -138,9 +140,11 @@ int select_item(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS){
 		mw->ctx_type=CTX_ENTRIES;
 		mw->ctx_id=mw->data.lv[cursor_i].id;
+		backup_page_num=mw->page;
 		mw->page=0;
 		request_list_update(mw);
 		restyle_focus_item(mw,CP_LISTNORMAL);
+		backup_cursor_i=cursor_i;
 		cursor_i=0;
 		restyle_focus_item(mw,CP_LISTFOCUS);
 	}
@@ -197,10 +201,10 @@ int context_exit(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS)
 		return KH_RET_EXIT;
 	else{
-		cursor_i=0;
+		cursor_i=backup_cursor_i;
 		mw->ctx_type=CTX_FEEDS;
 		mw->ctx_id=0;
-		mw->page=0;
+		mw->page=backup_page_num;
 		request_list_update(mw);
 		return KH_RET_UPDATE;
 	}
