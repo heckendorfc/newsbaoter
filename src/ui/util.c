@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
+#include "view.h"
 #include "util.h"
 #include "../common_defs.h"
 
@@ -53,6 +54,7 @@ int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 int pipe_entry(struct mainwindow *mw, int id){
 	int pid,fd;
 	ipcinfo ii=IPCVAL_WRITE_ENTRY;
+
 	def_prog_mode();
 	endwin();
 

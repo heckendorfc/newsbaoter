@@ -159,6 +159,9 @@ int handle_print_key_pairs(struct mainwindow *mw){
 	int pid;
 	tchar_t c;
 
+	def_prog_mode();
+	endwin();
+
 	pipe_to_pager(mw,&pid,&fd);
 
 	i=snprintf(tmp,tlen,"newsbaoter key bindings\n\n");
@@ -178,6 +181,9 @@ int handle_print_key_pairs(struct mainwindow *mw){
 	close(fd);
 
 	wait_for_pager(mw,pid);
+
+	reset_prog_mode();
+
 
 	return KH_RET_UPDATE;
 }
