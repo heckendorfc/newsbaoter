@@ -7,6 +7,7 @@
 #include "view.h"
 #include "util.h"
 #include "../common_defs.h"
+#include "../sql/cache.h"
 
 void wait_for_pager(struct mainwindow *mw, int pid){
 	int status;
@@ -17,14 +18,10 @@ void wait_for_pager(struct mainwindow *mw, int pid){
 		if(ret==-1 && errno!=EINTR)
 			break;
 	}while(!(ret==pid && (WIFEXITED(status) || WIFSIGNALED(status))));
-
-	pthread_mutex_unlock(&mw->viewtex);
 }
 
 int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 	int pipefd[2];
-
-	pthread_mutex_lock(&mw->viewtex);
 
 	pipe(pipefd);
 
@@ -53,24 +50,14 @@ int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 
 int pipe_entry(struct mainwindow *mw, int id){
 	int pid,fd;
-	ipcinfo ii=IPCVAL_WRITE_ENTRY;
 
 	def_prog_mode();
 	endwin();
 
-	write(mw->outfd[1],&ii,sizeof(ii));
-
-	//int fd=2;
-	//write(mw->outfd[1],&fd,sizeof(fd));
 	pipe_to_pager(mw,&pid,&fd);
-	write(mw->outfd[1],&id,sizeof(id));
-	write(mw->outfd[1],&fd,sizeof(fd));
+	cache_write_entry(mw,id,fd,mw->db);
+	close(fd);
 	wait_for_pager(mw,pid);
-
-	read(mw->infd[0],&ii,sizeof(ii));
-	if(ii!=IPCVAL_DONE){
-		/* TODO: error? */
-	}
 
 	reset_prog_mode();
 
@@ -78,49 +65,20 @@ int pipe_entry(struct mainwindow *mw, int id){
 }
 
 int request_list_update(struct mainwindow *mw){
-	ipcinfo ii=IPCVAL_UPDATE_REQUEST;
-	write(mw->outfd[1],&ii,sizeof(ii));
-	read(mw->infd[0],&ii,sizeof(ii));
-	if(ii!=IPCVAL_DONE){
-		/* TODO: error? */
-		return 1;
-	}
-	return 0;
+	return cache_gen_lines(mw,mw->db);
 }
 
 int catchup_entries(struct mainwindow *mw, int id){
-	ipcinfo ii=IPCVAL_READ_FEED;
-	write(mw->outfd[1],&ii,sizeof(ii));
-	write(mw->outfd[1],&id,sizeof(id));
-	read(mw->infd[0],&ii,sizeof(ii));
-	if(ii!=IPCVAL_DONE){
-		/* TODO: error? */
-		return 1;
-	}
+	cache_read_feed(mw->db,id);
 	return request_list_update(mw);
 }
 
 int toggle_read_ipc(struct mainwindow *mw, int id){
-	ipcinfo ii=IPCVAL_TOGGLE_READ;
-	write(mw->outfd[1],&ii,sizeof(ii));
-	write(mw->outfd[1],&id,sizeof(id));
-	read(mw->infd[0],&ii,sizeof(ii));
-	if(ii!=IPCVAL_DONE){
-		/* TODO: error? */
-		return 1;
-	}
+	cache_toggle_read_entry(mw->db,id,-1);
 	return request_list_update(mw);
 }
 
 int next_unread_ipc(struct mainwindow *mw, int id){
-	ipcinfo ii=IPCVAL_NEXT_UNREAD;
-	write(mw->outfd[1],&ii,sizeof(ii));
-	write(mw->outfd[1],&id,sizeof(id));
-	read(mw->infd[0],&id,sizeof(id));
-	read(mw->infd[0],&ii,sizeof(ii));
-	if(ii!=IPCVAL_DONE){
-		/* TODO: error? */
-		return 1;
-	}
+	id=cache_next_unread(mw,id,mw->db);
 	return request_list_update(mw);
 }
