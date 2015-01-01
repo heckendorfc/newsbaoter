@@ -400,6 +400,8 @@ static int update_entry(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 		strptime(ei[EFI_UDATE],"%F %T %z",&tp);
 		strftime(udate,20,"%s",&tp);
 		ei[EFI_UDATE]=udate;
+		if(!ei[EFI_PDATE])
+			ei[EFI_PDATE]=udate;
 	}
 
 	cache_update_entry(db,h->feedid,ei);

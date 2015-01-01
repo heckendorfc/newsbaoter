@@ -71,7 +71,7 @@
 			<xsl:variable name="DateTime" select="." />
 			<xsl:variable name="day" select="substring-before($DateTime,'T')" />
 			<xsl:variable name="time-temp" select="substring-after($DateTime,'T')" />
-			<xsl:variable name="time" select="substring($time-temp,0,8)" />
+			<xsl:variable name="time" select="substring($time-temp,0,9)" />
 			<xsl:value-of select="$day" />
 			<xsl:value-of select="' '" />
 			<xsl:value-of select="$time" />
@@ -84,7 +84,7 @@
 			<xsl:variable name="DateTime" select="." />
 			<xsl:variable name="day" select="substring-before($DateTime,'T')" />
 			<xsl:variable name="time-temp" select="substring-after($DateTime,'T')" />
-			<xsl:variable name="time" select="substring($time-temp,0,8)" />
+			<xsl:variable name="time" select="substring($time-temp,0,9)" />
 			<xsl:value-of select="$day" />
 			<xsl:value-of select="' '" />
 			<xsl:value-of select="$time" />
