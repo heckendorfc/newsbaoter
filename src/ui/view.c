@@ -63,7 +63,9 @@ static void restyle_window(WINDOW *w, int style){
 static void restyle_focus_item(struct mainwindow *mw, int style){
 	style=FI_STYLE(style);
 	restyle_window(body_w[cursor_i],style);
+	wrefresh(body_w[cursor_i]);
 	print_crop(body_w[cursor_i],mw->data.lv[cursor_i].line,BODY_WIDTH);
+	doupdate();
 }
 
 int low_item(struct mainwindow *mw){
@@ -212,17 +214,17 @@ int context_exit(struct mainwindow *mw){
 
 void clear_display(){
 	int i;
-
+/*
 	clear();
 	//erase();
 	refresh();
 	return;
-
-	wrefresh(titl_w);
-	wrefresh(head_w);
-	wrefresh(foot_w);
+*/
+	wclear(titl_w);
+	wclear(head_w);
+	wclear(foot_w);
 	for(i=0;i<bw_len;i++)
-		wrefresh(body_w[i]);
+		wclear(body_w[i]);
 }
 
 void regen_windows(struct mainwindow *mw){
@@ -320,7 +322,8 @@ static int print_crop(WINDOW *w, tchar_t *str, int max){
 		str[i]=' ';
 	str[max]=0;
 	mvwprintw(w,0,0,"%ls",str);
-	wrefresh(w);
+	//wrefresh(w);
+	wnoutrefresh(w);
 
 	return ret;
 }
@@ -353,6 +356,8 @@ void update_view(struct mainwindow *mw){
 		if(print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH))
 			content_bw_max=i;
 	}
+
+	doupdate();
 }
 
 void catchresize(int sig){
