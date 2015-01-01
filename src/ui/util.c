@@ -7,6 +7,7 @@
 #include "view.h"
 #include "util.h"
 #include "../common_defs.h"
+#include "../config.h"
 
 void wait_for_pager(struct mainwindow *mw, int pid){
 	int status;
@@ -31,8 +32,9 @@ int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 	*pid=fork();
 
 	if(*pid==0){ /* child */
-		char *pager="/usr/bin/less"; /* TODO: find path via cmake? */
-		char *args[2]={pager,(char*)0};
+		//char *pager="/usr/bin/less"; /* TODO: find path via cmake? */
+		//char *args[2]={pager,(char*)0};
+		char **args=global_config.pager;
 		dup2(pipefd[0],0);
 		close(pipefd[0]);
 		close(pipefd[1]);

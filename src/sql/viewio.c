@@ -266,6 +266,8 @@ static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 		write(wi->fd,titles[i],strlen(titles[i]));
 		write(wi->fd,": ",2);
 		write(wi->fd,row[i],strlen(row[i]));
+		if(global_config.html_pager)
+			write(wi->fd,"<br/>",5);
 		write(wi->fd,"\n",1);
 	}
 

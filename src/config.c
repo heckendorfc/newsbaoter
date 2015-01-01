@@ -24,6 +24,8 @@ struct nb_config global_config={
 	.confirm_exit=0,
 	.notify_beep=0,
 	.entry_retention=3*24*60*60,
+	.pager=NULL,
+	.html_pager=0,
 };
 
 int copy_str(void *d, char *next){
@@ -36,6 +38,34 @@ int copy_str(void *d, char *next){
 	}
 
 	return 1;
+}
+
+int copy_strarr(void *d, char *next){
+	char ***sd=(char***)d;
+	char *v;
+	char *tmp=next;
+	char **p;
+	int i;
+	int n=0;
+
+	while((v=get_line_word(next,&next))){
+		n++;
+	}
+
+	if(n<1)
+		return 1;
+
+	INIT_MEM(p,n+1);
+	v=tmp;
+	for(i=0;i<n;i++){
+		p[i]=strdup(v);
+		while(*(v++));
+	}
+	p[n]=NULL;
+
+	*sd=p;
+
+	return 0;
 }
 
 int copy_int(void *d, char *next){
@@ -227,6 +257,8 @@ struct config_args{
 	{"bind-key",0x1,config_bind_key},
 	{"unbind-key",0x0,config_bind_key},
 	{"cache-retention",NBCO(entry_retention),copy_int},
+	{"pager",NBCO(pager),copy_strarr},
+	{"html-pager",NBCO(html_pager),copy_int},
 	{NULL,0,NULL}
 };
 
@@ -391,6 +423,12 @@ void read_config_options_file(){
 		config_options[coff].process(
 				((void*)(&global_config))+config_options[coff].doff,
 				next);
+	}
+
+	if(global_config.pager==NULL){
+		INIT_MEM(global_config.pager,2);
+		global_config.pager[0]=strdup("/usr/bin/less");
+		global_config.pager[1]=NULL;
 	}
 
 	set_config_colors();

@@ -40,6 +40,8 @@ struct nb_config{
 	int confirm_exit;
 	int notify_beep; /* TODO (untested) */
 	int entry_retention;
+	char **pager;
+	int html_pager;
 	nbcolor_t colors[CP_NULL];
 };
 

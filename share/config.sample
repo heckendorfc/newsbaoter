@@ -14,6 +14,15 @@ unbind-key      o
 ##               mid-item, help.
 bind-key        O       select
 
+### Sets the pager command for viewing articles
+## arg1..n: pager utility and arguments
+# Article content will be piped to this command's stdin
+pager    /usr/local/bin/w3m -o confirm_qq=0 -T text/html
+
+### Send <br/> with every header newline to the pager
+## arg1: yes|no
+html-pager  yes
+
 ### Periodically reload feeds automatically
 ## arg1: yes|no
 auto-reload     yes
