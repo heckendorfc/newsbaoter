@@ -104,29 +104,37 @@ static void xmlproc_transform(struct xmlproc_data *h){
 	xsltFreeStylesheet(h->ss);
 }
 
-void xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
+int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
 	int res;
+	int ret=0;
 
 	if(!h->ctx)
-		return;
+		return 1;
 
-	xmlParseChunk(h->ctx,NULL,0,1);
+	if(xmlParseChunk(h->ctx,NULL,0,1)){
+		ret=1;
+		goto done;
+	}
 
 	h->doc=h->ctx->myDoc;
 	res = h->ctx->wellFormed;
 
-	xmlFreeParserCtxt(h->ctx);
-	h->ctx=NULL;
-
 	if(!res){
 		fprintf(stderr, "Failed to parse\n");
-		return;
+		ret=1;
+		goto done;
 	}
 
 	xmlproc_transform(h);
 
 	xmlproc_update_cache(h,db);
+
+done:
+	xmlFreeParserCtxt(h->ctx);
+	h->ctx=NULL;
 	xmlFreeDoc(h->doc);
+
+	return ret;
 }
 
 void xmlproc_init(struct xmlproc_data *h, void *ul){

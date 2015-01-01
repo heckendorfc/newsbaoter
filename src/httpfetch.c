@@ -165,11 +165,12 @@ void fetch_urls(struct urllist *ul, const int npara, void *db){
 					continue;
 				}
 
-				xmlproc_finish(xh+idx,db);
-				/*
-				na[0]=idx+'0';
-				xp_outf(xh[idx].doc,na);
-				*/
+				if(xmlproc_finish(xh+idx,db)){
+					if(ula[idx]->data.n_httperr<0)
+						ula[idx]->data.n_httperr=1;
+					else
+						ula[idx]->data.n_httperr++;
+				}
 				//ula[idx]->data.doc=xh[idx].doc;
 				//ula[idx]->data.info.feedid=xh[idx].feedid;
 			}
