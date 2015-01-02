@@ -1,3 +1,4 @@
+#include <curl/curl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -12,12 +13,10 @@
 #include "ui/keys.h"
 #include "sql/cache.h"
 
+/*
 struct io_data{
 	struct urllist *ul;
 	struct mainwindow *mw;
-	sqlite3 *db;
-	int pipefd[2];
-	int num_ur[2];
 };
 
 static int handle_ipc(struct io_data *iod, ipcinfo ii){
@@ -95,7 +94,7 @@ void* netiothread(void *data){
 					int rr=read(iod->pipefd[0],&ii,sizeof(ii));
 					if(rr>=0){
 						if(ii==IPCVAL_REFRESH_ALL){
-							/* FIXME: can sqlite handle this properly from a different thread? */
+							// FIXME: can sqlite handle this properly from a different thread?
 							fetch_urls(iod->ul,parallel,iod->db);
 							ii=IPCVAL_FETCH_DONE;
 							write(iod->mw->outfd[1],&ii,sizeof(ii));
@@ -188,28 +187,33 @@ void* dbiothread(void *data){
 
 	return (void*)0;
 }
+*/
 
 int main(int argc, char **argv){
 	struct mainwindow *mw;
-	pthread_t netioth;
-	pthread_t dbioth;
-	struct io_data iod;
+	//struct io_data iod;
 	char hs[]="Feed List";
 	const int fsl=50;
 	char fs[fsl];
+	void *httpdata=http_init();
 
 	mw=setup_ui();
-	iod.mw=mw;
-	pipe(iod.pipefd);
+	//iod.mw=mw;
 	read_config_options_file();
 	set_foot_help_string(fs,fsl);
 	chars_to_widechars(mw->header,hs,mw->width);
 	chars_to_widechars(mw->footer,fs,mw->width);
-	update_view(mw);
-	pthread_create(&netioth,NULL,netiothread,&iod);
-	pthread_create(&dbioth,NULL,dbiothread,&iod);
+
+	mw->db=init_db();
+	mw->ul=urlparse();
+	mw->httpdata=httpdata;
+	cache_gen_lines(mw,mw->db);
+
 	run_ui(mw);
 	end_ui();
+
+	sqlite3_close(mw->db);
+	http_destroy(httpdata);
 
 	return 0;
 }

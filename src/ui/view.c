@@ -1,4 +1,4 @@
-//#include <sqlite3.h>
+#include <sys/time.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
 #include <signal.h>
@@ -16,6 +16,7 @@
 #include "util.h"
 #include "../common_defs.h"
 #include "../config.h"
+#include "../httpfetch.h"
 
 #ifndef NB_VERS_S
 #define NB_VERS_S "A.B"
@@ -63,7 +64,9 @@ static void restyle_window(WINDOW *w, int style){
 static void restyle_focus_item(struct mainwindow *mw, int style){
 	style=FI_STYLE(style);
 	restyle_window(body_w[cursor_i],style);
+	wrefresh(body_w[cursor_i]);
 	print_crop(body_w[cursor_i],mw->data.lv[cursor_i].line,BODY_WIDTH);
+	doupdate();
 }
 
 int low_item(struct mainwindow *mw){
@@ -163,10 +166,12 @@ void notify_refresh_footer(struct mainwindow *mw){
 }
 
 int refresh_all(struct mainwindow *mw){
-	ipcinfo ii=IPCVAL_REFRESH_ALL;
-
-	write(mw->outfd[1],&ii,sizeof(ii));
 	notify_refresh_footer(mw);
+
+	if(handle_urls(mw->ul,mw->httpdata,mw->db)){
+		request_list_update(mw);
+		update_view(mw);
+	}
 
 	return KH_RET_OK;
 }
@@ -210,19 +215,26 @@ int context_exit(struct mainwindow *mw){
 	}
 }
 
+void clear_win(WINDOW *w){
+	wclear(w);
+	wrefresh(w);
+}
+
 void clear_display(){
 	int i;
-
+/*
 	clear();
 	//erase();
 	refresh();
 	return;
+*/
 
-	wrefresh(titl_w);
-	wrefresh(head_w);
-	wrefresh(foot_w);
+	clear_win(titl_w);
+	clear_win(head_w);
+	clear_win(foot_w);
 	for(i=0;i<bw_len;i++)
-		wrefresh(body_w[i]);
+		clear_win(body_w[i]);
+
 }
 
 void regen_windows(struct mainwindow *mw){
@@ -320,14 +332,14 @@ static int print_crop(WINDOW *w, tchar_t *str, int max){
 		str[i]=' ';
 	str[max]=0;
 	mvwprintw(w,0,0,"%ls",str);
-	wrefresh(w);
+	//wrefresh(w);
+	wnoutrefresh(w);
 
 	return ret;
 }
 
 void update_view(struct mainwindow *mw){
 	int i;
-
 	if(newsize){
 		struct winsize ws;
 		ioctl(0, TIOCGWINSZ, &ws);
@@ -342,7 +354,7 @@ void update_view(struct mainwindow *mw){
 		mw->beep_request=0;
 	}
 
-	clear_display();
+	//clear_display();
 
 	mvwaddstr(titl_w,0,0,TITL_STRING);
 	wrefresh(titl_w);
@@ -353,6 +365,8 @@ void update_view(struct mainwindow *mw){
 		if(print_crop(body_w[i],mw->data.lv[i].line,BODY_WIDTH))
 			content_bw_max=i;
 	}
+
+	doupdate();
 }
 
 void catchresize(int sig){
@@ -407,12 +421,8 @@ struct mainwindow* setup_ui(){
 
 	move(LINES-1,0);
 
-	//pthread_mutex_init(&view_m,NULL);
-
 	INIT_MEM(mw,1);
 	memset(mw,0,sizeof(*mw));
-
-	pthread_mutex_init(&mw->viewtex,NULL);
 
 	resize_mainwindow(mw);
 
@@ -420,12 +430,7 @@ struct mainwindow* setup_ui(){
 
 	mw->ctx_type=CTX_FEEDS;
 	mw->ctx_id=0;
-	if(pipe(mw->outfd)!=0)
-		; /* TODO: error */
-	if(pipe(mw->infd)!=0)
-		; /* TODO: error */
-	if(pipe(mw->sidefd)!=0)
-		; /* TODO: error */
+
 	return mw;
 }
 
@@ -433,18 +438,60 @@ void run_ui(struct mainwindow *mw){
 	int ch;
 	int ret;
 	fd_set fdread;
+	fd_set fdwrite;
+	fd_set fdexec;
 	int sret;
-	ipcinfo ii;
+	int found=0;
+	struct timeval *timeout;
+	struct timeval fetch_to;
+	struct timeval last_time;
+	long waittime=global_config.reload_time*60;
+
+	if(global_config.auto_reload){
+		handle_urls(mw->ul,mw->httpdata,mw->db);
+		gettimeofday(&last_time,NULL);
+	}
+
+	nodelay(stdscr,TRUE); /* |  Dirty hack... */
+	getch();              /* |  Screen would clear after first getch(). I don't know why */
+	nodelay(stdscr,FALSE);/* |  Maybe FIXME this at some point */
+
+	update_view(mw);
 
 	while(1){
 		FD_ZERO(&fdread);
-		FD_SET(mw->sidefd[0],&fdread);
+		FD_ZERO(&fdwrite);
+		FD_ZERO(&fdexec);
 		FD_SET(0,&fdread);
-		sret=select(mw->sidefd[0]+1,&fdread,NULL,NULL,NULL);
+		ret=-1;
 
-		if(FD_ISSET(0,&fdread)){
+		ret=http_get_fds(&fdread,&fdwrite,&fdexec,mw->httpdata);
+		if(ret==-1){
+			timeout=&fetch_to;
+			fetch_to.tv_sec=0;
+			fetch_to.tv_usec=100000;
+		}
+		else if(global_config.auto_reload && ret<0){ /* TODO: check error */
+			timeout=&fetch_to;
+			gettimeofday(&fetch_to,NULL);
+
+			if(fetch_to.tv_sec<last_time.tv_sec)
+				last_time.tv_sec=fetch_to.tv_sec;
+
+			if((fetch_to.tv_sec-last_time.tv_sec)>waittime)
+				fetch_to.tv_sec=0;
+			else
+				fetch_to.tv_sec=waittime-(fetch_to.tv_sec-last_time.tv_sec);
+			fetch_to.tv_usec=0;
+		}
+		else{
+			timeout=http_get_timeout(mw->httpdata);
+		}
+		sret=select(ret>0?ret+1:1,&fdread,&fdwrite,&fdexec,timeout);
+		found=0;
+		if(sret>0 && FD_ISSET(0,&fdread)){
+			found++;
 			ch = getch();
-
 			ret=process_key(ch,mw);
 			if(ret==KH_RET_EXIT){
 				if(global_config.confirm_exit){
@@ -467,10 +514,12 @@ void run_ui(struct mainwindow *mw){
 			else if(ret==KH_RET_UPDATE)
 				update_view(mw);
 		}
-		if(FD_ISSET(mw->sidefd[0],&fdread)){
-			int rr=read(mw->sidefd[0],&ii,sizeof(ii));
-			if(rr>0 && ii==IPCVAL_UPDATE_REQUEST)
+		if(sret==0 || sret-found>0){
+			if(handle_urls(mw->ul,mw->httpdata,mw->db)){
+				gettimeofday(&last_time,NULL);
+				request_list_update(mw);
 				update_view(mw);
+			}
 		}
 	}
 }

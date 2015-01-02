@@ -228,7 +228,7 @@ static void set_title_string(struct mainwindow *mw, char *tail, sqlite3 *db){
 	chars_to_widechars(mw->header,tmp,mw->width);
 }
 
-int cache_gen_lines(void *uld, struct mainwindow *mw, sqlite3 *db){
+int cache_gen_lines(struct mainwindow *mw, sqlite3 *db){
 	int r=1;
 	const int tlen=256;
 	char tmp[tlen];
@@ -274,7 +274,7 @@ static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 	return SQLITE_OK;
 }
 
-int cache_write_entry(void *uld, struct mainwindow *mw, int id, int fd, sqlite3 *db){
+int cache_write_entry(struct mainwindow *mw, int id, int fd, sqlite3 *db){
 	const int qlen=256;
 	char query[qlen];
 	struct write_entry_info wi = {.s=query, .len=qlen, .fd=fd};
