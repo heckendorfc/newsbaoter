@@ -41,6 +41,7 @@ enum entry_field_ind{
 	EFI_PUBLIC_DONE,
 };
 
+void xmlproc_cleanup(struct xmlproc_data *h);
 void xp_outf(xmlDocPtr doc,char *fn);
 void xmlproc_free_doc(xmlDocPtr doc);
 void xmlproc_parse_block(struct xmlproc_data *h, char *buf, size_t n);

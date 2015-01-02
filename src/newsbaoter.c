@@ -1,3 +1,4 @@
+#include <curl/curl.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
@@ -194,6 +195,7 @@ int main(int argc, char **argv){
 	char hs[]="Feed List";
 	const int fsl=50;
 	char fs[fsl];
+	void *httpdata=http_init();
 
 	mw=setup_ui();
 	//iod.mw=mw;
@@ -204,11 +206,14 @@ int main(int argc, char **argv){
 
 	mw->db=init_db();
 	mw->ul=urlparse();
-	mw->httpdata=http_init();
+	mw->httpdata=httpdata;
 	cache_gen_lines(mw,mw->db);
 
 	run_ui(mw);
 	end_ui();
+
+	sqlite3_close(mw->db);
+	http_destroy(httpdata);
 
 	return 0;
 }

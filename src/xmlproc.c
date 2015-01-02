@@ -64,6 +64,7 @@ void xp_outf(xmlDocPtr doc,char *fn){
 
 void xmlproc_free_doc(xmlDocPtr doc){
 	xmlFreeDoc(doc);
+
 }
 
 #ifndef SHARE_PATH
@@ -104,6 +105,17 @@ static void xmlproc_transform(struct xmlproc_data *h){
 	xsltFreeStylesheet(h->ss);
 }
 
+void xmlproc_cleanup(struct xmlproc_data *h){
+	if(h->ctx){
+		xmlFreeParserCtxt(h->ctx);
+		h->ctx=NULL;
+	}
+	if(h->doc){
+		xmlFreeDoc(h->doc);
+		h->doc=NULL;
+	}
+}
+
 int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
 	int res;
 	int ret=0;
@@ -133,6 +145,7 @@ done:
 	xmlFreeParserCtxt(h->ctx);
 	h->ctx=NULL;
 	xmlFreeDoc(h->doc);
+	h->doc=NULL;
 
 	return ret;
 }
@@ -434,4 +447,6 @@ static void xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db){
 	update_feed(root,h,db);
 	update_entries(root,h,db);
 
+	xmlproc_free_doc(h->doc);
+	h->doc=NULL;
 }

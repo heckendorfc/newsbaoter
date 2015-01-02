@@ -32,6 +32,10 @@ void cleanup_handles(struct http_data *data){
 	for(i=0;i<data->anp;i++){
 		curl_multi_remove_handle(data->cm,data->ce[i]);
 		curl_easy_cleanup(data->ce[i]);
+		if(data->xh[i].doc){
+			xmlproc_free_doc(data->xh[i].doc);
+			data->xh[i].doc=NULL;
+		}
 	}
 
 	curl_multi_cleanup(data->cm);
@@ -134,6 +138,14 @@ void* http_init(){
 	return data;
 }
 
+void http_destroy(void *d){
+	struct http_data *data=(struct http_data*)d;
+	if(data)
+		free(data);
+	curl_global_cleanup();
+}
+
+
 void http_fetch_init(struct urllist *ul, void *d){
 	struct http_data *data=(struct http_data*)d;
 	int npara=5;
@@ -141,6 +153,8 @@ void http_fetch_init(struct urllist *ul, void *d){
 
 	if(global_config.parallel_reload>0)
 		data->npara=npara=global_config.parallel_reload;
+
+	data->cm=curl_multi_init();
 
 	INIT_MEM(data->xh,npara);
 	INIT_MEM(data->ce,npara);
@@ -153,22 +167,23 @@ void http_fetch_init(struct urllist *ul, void *d){
 	data->rnp=0;
 }
 
-int http_get_fds(fd_set *fdr, void *d){
+int http_get_fds(fd_set *fdr, fd_set *fdw, fd_set *fde, void *d){
 	struct http_data *data=(struct http_data*)d;
 	int maxfd;
 	int ret;
 
 	if(data->cm==NULL)
-		return -1;
-
-	if((ret=curl_multi_fdset(data->cm,fdr,NULL,NULL,&maxfd))){
 		return -2;
+
+	if((ret=curl_multi_fdset(data->cm,fdr,fdw,fde,&maxfd))){
+		return -3;
 	}
 
 	return maxfd;
 }
 
 void finish_batch(struct http_data *data, void *db){
+	int i;
 	CURLMsg *msg; /* for picking up messages with the transfer status */
 	int msgs_left; /* how many messages are left */
 
@@ -195,6 +210,7 @@ void finish_batch(struct http_data *data, void *db){
 					fprintf(stderr,"libcurl error (%d) on url [try %d/%d]: %s\n",msg->data.result,data->ula[idx]->data.n_httperr,global_config.dl_retries,data->ula[idx]->data.url);
 					data->ula[idx]->data.n_httperr=global_config.dl_retries;
 				}
+				xmlproc_cleanup(data->xh+idx);
 				continue;
 			}
 
@@ -208,6 +224,12 @@ void finish_batch(struct http_data *data, void *db){
 			//ula[idx]->data.info.feedid=xh[idx].feedid;
 		}
 	}
+
+	for(i=0;i<data->anp;i++){
+		curl_multi_remove_handle(data->cm,data->ce[i]);
+		curl_easy_cleanup(data->ce[i]);
+	}
+
 }
 
 int process_handles(struct http_data *data){
@@ -222,7 +244,7 @@ void load_new_handles(struct urllist *ul, struct http_data *data){
 	data->anp=0;
 	for(i=0;i<data->npara;i++){
 		if(tul==NULL)
-			goto nomore;
+			break;
 
 		if(tul->data.n_httperr<0){
 			tul->data.n_httperr=0;
@@ -232,7 +254,7 @@ void load_new_handles(struct urllist *ul, struct http_data *data){
 			while(tul && (tul->data.n_httperr>=global_config.dl_retries || tul->data.n_httperr==0))
 				tul=tul->next;
 			if(tul==NULL)
-				goto nomore;
+				break;
 			if(tul->data.n_httperr<0)
 				tul->data.n_httperr=0;
 		}
@@ -263,11 +285,11 @@ void load_new_handles(struct urllist *ul, struct http_data *data){
 	}
 
 	if(data->anp==0)
-		goto nomore;
+		goto empty;
 
 	return;
 
-nomore:
+empty:
 	cleanup_handles(data);
 }
 

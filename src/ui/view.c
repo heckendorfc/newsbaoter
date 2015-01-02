@@ -438,13 +438,17 @@ void run_ui(struct mainwindow *mw){
 	int ch;
 	int ret;
 	fd_set fdread;
+	fd_set fdwrite;
+	fd_set fdexec;
 	int sret;
+	int found=0;
 	struct timeval *timeout;
 	struct timeval fetch_to;
 	struct timeval last_time;
 	long waittime=global_config.reload_time*60;
 
 	if(global_config.auto_reload){
+		handle_urls(mw->ul,mw->httpdata,mw->db);
 		gettimeofday(&last_time,NULL);
 	}
 
@@ -456,12 +460,18 @@ void run_ui(struct mainwindow *mw){
 
 	while(1){
 		FD_ZERO(&fdread);
+		FD_ZERO(&fdwrite);
+		FD_ZERO(&fdexec);
 		FD_SET(0,&fdread);
 		ret=-1;
 
-		ret=http_get_fds(&fdread,mw->httpdata);
-		if(global_config.auto_reload && ret<0){ /* TODO: check error */
-			ret=0;
+		ret=http_get_fds(&fdread,&fdwrite,&fdexec,mw->httpdata);
+		if(ret==-1){
+			timeout=&fetch_to;
+			fetch_to.tv_sec=0;
+			fetch_to.tv_usec=100000;
+		}
+		else if(global_config.auto_reload && ret<0){ /* TODO: check error */
 			timeout=&fetch_to;
 			gettimeofday(&fetch_to,NULL);
 
@@ -477,9 +487,10 @@ void run_ui(struct mainwindow *mw){
 		else{
 			timeout=http_get_timeout(mw->httpdata);
 		}
-		sret=select(ret+1,&fdread,NULL,NULL,timeout);
-
-		if(FD_ISSET(0,&fdread)){
+		sret=select(ret>0?ret+1:1,&fdread,&fdwrite,&fdexec,timeout);
+		found=0;
+		if(sret>0 && FD_ISSET(0,&fdread)){
+			found++;
 			ch = getch();
 			ret=process_key(ch,mw);
 			if(ret==KH_RET_EXIT){
@@ -503,8 +514,9 @@ void run_ui(struct mainwindow *mw){
 			else if(ret==KH_RET_UPDATE)
 				update_view(mw);
 		}
-		else{
+		if(sret==0 || sret-found>0){
 			if(handle_urls(mw->ul,mw->httpdata,mw->db)){
+				gettimeofday(&last_time,NULL);
 				request_list_update(mw);
 				update_view(mw);
 			}
