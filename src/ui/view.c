@@ -145,7 +145,12 @@ int select_item(struct mainwindow *mw){
 		mw->ctx_id=mw->data.lv[cursor_i].id;
 		backup_page_num=mw->page;
 		mw->page=0;
-		request_list_update(mw);
+		if(request_list_update(mw)){ /* No data? Undo */
+			mw->page=backup_page_num;
+			mw->ctx_type=CTX_FEEDS;
+			mw->ctx_id=0;
+			return KH_RET_OK;
+		}
 		restyle_focus_item(mw,CP_LISTNORMAL);
 		backup_cursor_i=cursor_i;
 		cursor_i=0;
