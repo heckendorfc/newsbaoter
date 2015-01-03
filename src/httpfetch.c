@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <curl/curl.h>
 #include <string.h>
 
@@ -45,60 +50,12 @@ void cleanup_handles(struct http_data *data){
 	free(data->ula);
 	free(data->ce);
 	free(data->xh);
+
+	/* globals */
+	xmlproc_cleanup_global();
+	curl_global_cleanup();
+	curl_global_init(CURL_GLOBAL_ALL);
 }
-/*
-static void run_multi_group(struct http_data *data){
-	struct timeval timeout;
-	int rc=0;
-	CURLMcode mc;
-	int rnp=0;
-
-	fd_set fdread;
-	fd_set fdwrite;
-	fd_set fdexcep;
-	int maxfd = -1;
-
-	long curl_timeo = -1;
-	do{
-		if(rc!=-1)
-			mc=curl_multi_perform(data->cm,&data->rnp);
-
-		if(rnp){
-			FD_ZERO(&fdread);
-			FD_ZERO(&fdwrite);
-			FD_ZERO(&fdexcep);
-
-			timeout.tv_sec = 1;
-			timeout.tv_usec = 0;
-
-			curl_multi_timeout(cm, &curl_timeo);
-			if(curl_timeo >= 0) {
-				timeout.tv_sec = curl_timeo / 1000;
-				if(timeout.tv_sec > 1)
-					timeout.tv_sec = 1;
-				else
-					timeout.tv_usec = (curl_timeo % 1000) * 1000;
-			}
-
-			mc = curl_multi_fdset(cm, &fdread, &fdwrite, &fdexcep, &maxfd);
-
-			if(mc != CURLM_OK){
-				fprintf(stderr,"fdset error\n");
-				return;
-			}
-
-			if(maxfd == -1) {
-				struct timeval wait = { 0, 100 * 1000 }; // 100ms
-				rc = select(0, NULL, NULL, NULL, &wait);
-			}
-			else{
-				rc = select(maxfd+1, &fdread, &fdwrite, &fdexcep, &timeout);
-			}
-		}
-
-	}while(rnp);
-}
-*/
 
 struct timeval* http_get_timeout(void *d){
 	struct http_data *data=(struct http_data*)d;
@@ -207,7 +164,7 @@ void finish_batch(struct http_data *data, void *db){
 						data->ula[idx]->data.n_httperr++;
 				}
 				else{
-					fprintf(stderr,"libcurl error (%d) on url [try %d/%d]: %s\n",msg->data.result,data->ula[idx]->data.n_httperr,global_config.dl_retries,data->ula[idx]->data.url);
+					debug_print("libcurl error (%d) on url [try %d/%d]: %s\n",msg->data.result,data->ula[idx]->data.n_httperr,global_config.dl_retries,data->ula[idx]->data.url);
 					data->ula[idx]->data.n_httperr=global_config.dl_retries;
 				}
 				xmlproc_cleanup(data->xh+idx);
@@ -308,88 +265,3 @@ int handle_urls(struct urllist *ul, void *d, void *db){
 
 	return data->cm==NULL;
 }
-
-#if 0
-void fetch_urls(struct urllist *ul, const int npara, void *db){
-	CURL **ce;
-	CURLM *cm=curl_multi_init();
-	struct xmlproc_data *xh;
-	struct urllist *tul;
-	struct urllist **ula;
-	int i;
-	int anp;
-	CURLMsg *msg; /* for picking up messages with the transfer status */
-	int msgs_left; /* how many messages are left */
-
-	INIT_MEM(xh,npara);
-	INIT_MEM(ce,npara);
-	INIT_MEM(ula,npara);
-
-	for(tul=ul;tul;tul=tul->next)
-		tul->data.n_httperr=-1;
-
-	/* TODO: this is awful. clean up at some point. */
-	while(1){
-		tul=ul;
-		anp=0;
-		for(i=0;i<npara;i++){
-			if(tul==NULL)
-				break;
-
-			if(tul->data.n_httperr<0){
-				tul->data.n_httperr=0;
-			}
-			else if(tul->data.n_httperr==0 || tul->data.n_httperr>=global_config.dl_retries){
-				tul=tul->next;
-				while(tul && (tul->data.n_httperr>=global_config.dl_retries || tul->data.n_httperr==0))
-					tul=tul->next;
-				if(tul==NULL)
-					break;
-				if(tul->data.n_httperr<0)
-					tul->data.n_httperr=0;
-			}
-
-			ula[i]=tul;
-			if(tul->data.info.doc){
-				xmlproc_free_doc(tul->data.info.doc);
-				tul->data.info.doc=NULL;
-			}
-
-			xmlproc_init(xh+i,tul);
-
-			ce[i]=curl_easy_init();
-
-			/* send all data to this function  */
-			curl_easy_setopt(ce[i],CURLOPT_WRITEFUNCTION,write_memory_cb);
-			curl_easy_setopt(ce[i],CURLOPT_WRITEDATA,(void *)(xh+i));
-			curl_easy_setopt(ce[i],CURLOPT_USERAGENT,"newsbaoter/0.1");
-			curl_easy_setopt(ce[i],CURLOPT_FOLLOWLOCATION,1);
-			curl_easy_setopt(ce[i],CURLOPT_URL,tul->data.url);
-			if(global_config.proxy)
-				curl_easy_setopt(ce[i],CURLOPT_PROXY,global_config.proxy);
-
-			curl_multi_add_handle(cm,ce[i]);
-
-			tul=tul->next;
-			anp++;
-		}
-
-		if(anp==0)
-			break;
-
-		run_multi_group(cm);
-
-
-		for(i=0;i<anp;i++){
-			curl_multi_remove_handle(cm,ce[i]);
-			curl_easy_cleanup(ce[i]);
-		}
-	}
-
-	curl_multi_cleanup(cm);
-
-	free(ula);
-	free(ce);
-	free(xh);
-}
-#endif

@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <stdlib.h>
 #include <ncurses.h>
 #include <errno.h>
@@ -36,7 +41,7 @@ int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 		close(pipefd[0]);
 		close(pipefd[1]);
 		if(execvp(args[0],args))
-			fprintf(stderr,"Error spawning %s\n",args[0]);
+			debug_print("Error spawning %s\n",args[0]);
 		exit(1);
 	}
 	else if(*pid>0){ /* parent */

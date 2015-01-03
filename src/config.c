@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <stdlib.h>
 #include <stddef.h>
 #include <fcntl.h>
@@ -168,6 +173,7 @@ int get_color_attr(char *s){
 void set_nbcolor(nbcolor_t *cd, unsigned int cfi, unsigned int cbi, unsigned int attr){
 	cd->color=cfi|(cbi<<16);
 	cd->attr=attr;
+	cd->set=1;
 }
 
 void get_nbcolor(nbcolor_t *cd, unsigned int *cfi, unsigned int *cbi, unsigned int *attr){
@@ -401,8 +407,12 @@ void read_config_options_file(){
 	struct conf_read c;
 	int coff;
 
+	memset(&global_config.colors,0,sizeof(global_config.colors));
+	bind_defaults();
+
 	if((fd=open_config(file))<0){
 		fprintf(stderr,"No config file found. Please consider configuring ~/%s\n",NB_CONF_FILE);
+		sleep(2);
 		goto done;
 	}
 
@@ -430,8 +440,6 @@ void read_config_options_file(){
 		global_config.pager[0]=strdup("/usr/bin/less");
 		global_config.pager[1]=NULL;
 	}
-
-	set_config_colors();
 
 	clean_conf_read(&c);
 

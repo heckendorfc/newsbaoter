@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #ifndef NBXMLPROC_H
 #define NBXMLPROC_H
 
@@ -41,6 +46,7 @@ enum entry_field_ind{
 	EFI_PUBLIC_DONE,
 };
 
+void xmlproc_cleanup_global();
 void xmlproc_cleanup(struct xmlproc_data *h);
 void xp_outf(xmlDocPtr doc,char *fn);
 void xmlproc_free_doc(xmlDocPtr doc);

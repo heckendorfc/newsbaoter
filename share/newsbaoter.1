@@ -2,7 +2,14 @@
 .SH NAME
 newsbaoter \- news feed reader
 .SH SYNOPSIS
-\fBnewsbaoter
+\fBnewsbaoter\fP [\fBoptions\fP]
+.SH OPTIONS
+.TP
+\fB\-d
+Output debug information in the log file.
+.TP
+\fB\-D
+Output debug information to stderr.
 .SH FILES
 .TP
 ~/.newsbaoter/urls
@@ -10,3 +17,6 @@ List of news feed URLs to pull
 .TP
 ~/.newsbaoter/config
 General newsbaoter configuration options
+.TP
+~/.newsbaoter/debug
+Debug log file

@@ -9,6 +9,8 @@ ones used by newsbeuter:
   ~/.newsbaoter/urls
   ~/.newsbaoter/config
 
+See share/config.sample for available options.
+
 Building and example usage
 --------------------------
 mkdir build && cd build
