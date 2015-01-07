@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #ifndef NBCONFIG_H
 #define NBCONFIG_H
 
@@ -12,6 +17,7 @@ struct conf_read{
 typedef struct nbcolor_t{
 	unsigned int color;
 	unsigned int attr;
+	char set;
 }nbcolor_t;
 
 enum nbcolor_cp{

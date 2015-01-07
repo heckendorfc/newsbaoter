@@ -47,13 +47,13 @@ src/sql/viewio.c
 
 target_link_libraries (newsbaoter ${CMAKE_THREAD_LIBS_INIT} ${NBLIBS})
 
-FILE(GLOB shared_files xsl/*)
+FILE(GLOB shared_files xsl/*.xml)
 #SET(shared_files share/defaults.conf share/create.sql)
-SET(doc_files README)
+#SET(doc_files README)
 SET(example_files share/config.sample)
 SET(man_files share/newsbaoter.1)
 INSTALL(FILES ${shared_files} DESTINATION share/newsbaoter/xsl)
 INSTALL(FILES ${example_files} DESTINATION share/examples/newsbaoter)
 INSTALL(FILES ${man_files} DESTINATION ${INSTALL_MANPREFIX}/man/man1)
-INSTALL(FILES ${doc_files} DESTINATION share/doc/newsbaoter)
+#INSTALL(FILES ${doc_files} DESTINATION share/doc/newsbaoter)
 INSTALL(TARGETS newsbaoter RUNTIME DESTINATION bin)

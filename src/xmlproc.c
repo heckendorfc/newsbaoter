@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
@@ -14,6 +19,7 @@
 #include <libxslt/transform.h>
 #include <libxslt/xsltutils.h>
 
+#include "common_defs.h"
 #include "xmlproc.h"
 #include "ui/view.h"
 #include "urlparse.h"
@@ -105,6 +111,10 @@ static void xmlproc_transform(struct xmlproc_data *h){
 	xsltFreeStylesheet(h->ss);
 }
 
+void xmlproc_cleanup_global(){
+	xmlCleanupParser();
+}
+
 void xmlproc_cleanup(struct xmlproc_data *h){
 	if(h->ctx){
 		xmlFreeParserCtxt(h->ctx);
@@ -132,7 +142,7 @@ int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
 	res = h->ctx->wellFormed;
 
 	if(!res){
-		fprintf(stderr, "Failed to parse\n");
+		debug_print("Failed to parse\n");
 		ret=1;
 		goto done;
 	}
@@ -148,6 +158,22 @@ done:
 	h->doc=NULL;
 
 	return ret;
+}
+
+void xmlproc_err_handler(void *ctx, const char *msg, ...){
+	va_list args;
+
+	if(!debugfd)
+		return;
+
+	va_start(args, msg);
+	vfprintf(debugfd, msg, args);
+	va_end(args);
+}
+
+void xmlproc_global_init(){
+	xmlGenericErrorFunc handler=xmlproc_err_handler;
+	initGenericErrorDefaultFunc(&handler);
 }
 
 void xmlproc_init(struct xmlproc_data *h, void *ul){

@@ -1,9 +1,15 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
 #include <stdarg.h>
 
+#include "../common_defs.h"
 #include "../config.h"
 #include "../urlparse.h"
 #include "../ui/view.h"
@@ -16,7 +22,7 @@ int nb_qnprintf(char *s, int n, char *fmt, ...){
 	cnt = vsnprintf(s, n, fmt, args);
 	va_end(args);
 	if(cnt>=n-1){
-		fprintf(stderr,"Query buffer overflow: %s\n",s);
+		debug_print("Query buffer overflow: %s\n",s);
 		exit(2);
 	}
 	return cnt;

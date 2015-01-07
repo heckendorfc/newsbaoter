@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <sys/time.h>
 #include <sys/select.h>
 #include <sys/ioctl.h>
@@ -379,17 +384,16 @@ void catchresize(int sig){
 }
 
 void set_color_pair(int n, int f, int b, int a){
-	set_nbcolor(global_config.colors+n,f,b,a);
+	if(!global_config.colors[n].set)
+		set_nbcolor(global_config.colors+n,f,b,a);
 	init_pair(n,f,b);
 }
 
 static void set_default_colors(){
-	memset(&global_config.colors,0,sizeof(global_config.colors));
-
 	set_color_pair(CP_LISTNORMAL,COLOR_WHITE,0,0);
 	set_color_pair(CP_LISTNORMAL_UR,COLOR_WHITE,0,0);
-	set_color_pair(CP_LISTFOCUS,COLOR_WHITE,0,A_BOLD);
-	set_color_pair(CP_LISTFOCUS_UR,COLOR_WHITE,0,A_BOLD);
+	set_color_pair(CP_LISTFOCUS,COLOR_CYAN,0,A_BOLD);
+	set_color_pair(CP_LISTFOCUS_UR,COLOR_CYAN,0,A_BOLD);
 	set_color_pair(CP_INFO,COLOR_WHITE,COLOR_BLUE,0);
 	set_color_pair(CP_ARTICLE,COLOR_WHITE,0,0);
 	set_color_pair(CP_BACKGROUND,COLOR_WHITE,0,0);
@@ -402,6 +406,8 @@ void set_config_colors(){
 	unsigned int cfi,cbi,attr;
 
 	for(i=0;i<CP_NULL;i++){
+		if(!global_config.colors[i].set)
+			continue;
 		get_nbcolor(global_config.colors+i,&cfi,&cbi,&attr);
 		init_pair(i,cfi,cbi);
 	}
@@ -423,6 +429,7 @@ struct mainwindow* setup_ui(){
 
 	start_color();
 	set_default_colors();
+	set_config_colors();
 
 	move(LINES-1,0);
 
@@ -430,8 +437,6 @@ struct mainwindow* setup_ui(){
 	memset(mw,0,sizeof(*mw));
 
 	resize_mainwindow(mw);
-
-	bind_defaults();
 
 	mw->ctx_type=CTX_FEEDS;
 	mw->ctx_id=0;

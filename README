@@ -2,12 +2,16 @@ newsbaoter  --  News feed reader
 
 Currently supports RSS 2.0, Atom 0.3, Atom 1.0, and RDF
 
+IRC: #baot on irc.rizon.net
+
 Configuration
 -------------
 The following files are configured with a syntax equivalent to the
 ones used by newsbeuter:
   ~/.newsbaoter/urls
   ~/.newsbaoter/config
+
+See share/config.sample for available options.
 
 Building and example usage
 --------------------------

@@ -1,3 +1,8 @@
+/* Copyright 2015 Christian Heckendorf.  All rights reserved.
+ * Use of this source code is governed by a BSD-style license
+ * that can be found in the LICENSE file.
+ */
+
 #include <sqlite3.h>
 #include <sys/stat.h>
 #include <errno.h>
@@ -116,11 +121,11 @@ sqlite3* init_db(){
 		char *dir=get_config_file(NB_CONF_DIR);
 		if(mkdir(dir,0700)==0 || errno==EEXIST){
 			if(sqlite3_open(fn,&conn)!=SQLITE_OK){
-				fprintf(stderr,"Error creating cache database\n");
+				debug_print("Error creating cache database\n");
 				exit(2);
 			}
 			if(create_db(conn)){
-				fprintf(stderr,"Error creating cache database tables\n");
+				debug_print("Error creating cache database tables\n");
 				exit(2);
 			}
 		}
