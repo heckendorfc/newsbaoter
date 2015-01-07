@@ -92,6 +92,7 @@ void* http_init(){
 	curl_global_init(CURL_GLOBAL_ALL);
 	INIT_MEM(data,1);
 	memset(data,0,sizeof(*data));
+	xmlproc_global_init();
 	return data;
 }
 

@@ -53,6 +53,7 @@ void xmlproc_free_doc(xmlDocPtr doc);
 void xmlproc_parse_block(struct xmlproc_data *h, char *buf, size_t n);
 int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db);
 void xmlproc_init(struct xmlproc_data *h, void *ul);
+void xmlproc_global_init();
 int xmlproc_write_entry(void *uld, struct mainwindow *mw, int id, int fd);
 int xmlproc_gen_lines(void *uld, struct mainwindow *mw);
 
