@@ -170,7 +170,7 @@ int handle_print_key_pairs(struct mainwindow *mw){
 
 	pipe_to_pager(mw,&pid,&fd);
 
-	i=snprintf(tmp,tlen,"newsbaoter key bindings\n\n");
+	i=snprintf(tmp,tlen,"newsbaoter key bindings%s\n\n",global_config.html_pager?"<br/><br/>":"");
 	write(fd,tmp,i);
 
 	while((p=next_uikey_pair(&off,&name))){
