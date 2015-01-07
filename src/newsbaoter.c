@@ -9,7 +9,6 @@
 #include <curl/curl.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <pthread.h>
 #include <unistd.h>
 #include <sqlite3.h>
 

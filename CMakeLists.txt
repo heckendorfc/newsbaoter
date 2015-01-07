@@ -22,7 +22,6 @@ set(CURSES_USE_NCURSES TRUE)
 
 find_package (LibXslt REQUIRED)
 find_package (LibXml2 REQUIRED)
-find_package (Threads REQUIRED)
 find_package (CURL REQUIRED)
 find_package (CursesW REQUIRED)
 find_package (Sqlite REQUIRED)
@@ -45,7 +44,7 @@ src/sql/viewio.c
 )
 #src/ui/utf8.c
 
-target_link_libraries (newsbaoter ${CMAKE_THREAD_LIBS_INIT} ${NBLIBS})
+target_link_libraries (newsbaoter ${NBLIBS})
 
 FILE(GLOB shared_files xsl/*.xml)
 #SET(shared_files share/defaults.conf share/create.sql)

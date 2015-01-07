@@ -8,7 +8,6 @@
 #include <sys/ioctl.h>
 #include <signal.h>
 #include <locale.h>
-#include <pthread.h>
 #include <ncurses.h>
 #include <signal.h>
 #include <stdio.h>
@@ -535,7 +534,5 @@ void run_ui(struct mainwindow *mw){
 }
 
 void end_ui(){
-	//pthread_mutex_destroy(&view_m);
-
 	endwin();
 }
