@@ -4,6 +4,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "../config.h"
 #include "../hash.h"
 #include "keys.h"
 #include "view.h"
@@ -171,7 +172,7 @@ int handle_print_key_pairs(struct mainwindow *mw){
 		for(i=0;handler_names[i].handler;i++){
 			if(handler_names[i].handler==p){
 				c=strtol(name,NULL,16);
-				i=snprintf(tmp,tlen,"%lc\t%s\n",c,handler_names[i].name);
+				i=snprintf(tmp,tlen,"%lc\t%s%s\n",c,handler_names[i].name,global_config.html_pager?"<br/>":"");
 				write(fd,tmp,i);
 				break;
 			}
