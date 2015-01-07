@@ -326,7 +326,7 @@ static int write_line(tchar_t *line, int len, xmlDocPtr xd, int type, int id, in
 		return 1;
 	}
 
-	sprintf(tmp,"%3d  ",index+1);
+	snprintf(tmp,tsize,"%3d  ",index+1);
 	off=chars_to_widechars(line,tmp,len);
 
 	if(type==CTX_ENTRIES){

@@ -127,26 +127,29 @@ handler_t find_handler(char *s){
 }
 
 void bind_key(int c, handler_t handler){
-	char s[17];
+	const int ssize=17;
+	char s[ssize];
 
-	sprintf(s,"%x",c);
+	snprintf(s,ssize,"%x",c);
 
 	set_uikey(s,handler);
 }
 
 void unbind_key(int c){
-	char s[17];
+	const int ssize=17;
+	char s[ssize];
 
-	sprintf(s,"%x",c);
+	snprintf(s,ssize,"%x",c);
 
 	unset_uikey(s);
 }
 
 int process_key(int c, struct mainwindow *mw){
 	handler_t kh;
-	char s[17];
+	const int ssize=17;
+	char s[ssize];
 
-	sprintf(s,"%x",c);
+	snprintf(s,ssize,"%x",c);
 
 	if((kh=get_uikey(s)))
 		return kh(mw);

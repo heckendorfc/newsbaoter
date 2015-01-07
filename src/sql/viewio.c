@@ -49,11 +49,12 @@ static int feed_line_cb(void *data, int n_col, char **row, char **titles){
 	long tot_ent=strtol(row[3],NULL,10);
 	int nc=0;
 	const int count_width=10;
-	char urt[30];
+	const int utsize=50;
+	char urt[utsize];
 
 	fla->lv[fla->ind].unread=tot_ent-r_ent;
 
-	sprintf(tmp,"%3d  ",fla->ind+1);
+	snprintf(tmp,tsize,"%3d  ",fla->ind+1);
 	off=chars_to_widechars(fla->lv[fla->ind].line,tmp,fla->len);
 
 	if(r_ent<tot_ent){
@@ -63,7 +64,7 @@ static int feed_line_cb(void *data, int n_col, char **row, char **titles){
 		off+=chars_to_widechars(fla->lv[fla->ind].line+off," ",fla->len-off);
 	}
 
-	sprintf(urt,"[%ld/%ld]",tot_ent-r_ent,tot_ent);
+	snprintf(urt,utsize,"[%ld/%ld]",tot_ent-r_ent,tot_ent);
 	nc=strlen(urt);
 	nc=count_width-nc;
 	if(nc<0)
@@ -136,7 +137,7 @@ static int entry_line_cb(void *data, int n_col, char **row, char **titles){
 
 	ela->lv[ela->ind].unread=!r;
 
-	sprintf(tmp,"%3d  ",ela->ind+1);
+	snprintf(tmp,tsize,"%3d  ",ela->ind+1);
 	off=chars_to_widechars(ela->lv[ela->ind].line,tmp,ela->len);
 
 	if(!r){
