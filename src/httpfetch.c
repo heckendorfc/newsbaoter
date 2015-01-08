@@ -31,7 +31,7 @@ static size_t write_memory_cb(void *contents, size_t size, size_t nmemb, void *u
 	return n;
 }
 
-void cleanup_handles(struct http_data *data){
+void cleanup_handles(struct http_data *data, void *db){
 	int i;
 
 	for(i=0;i<data->anp;i++){
@@ -50,6 +50,8 @@ void cleanup_handles(struct http_data *data){
 	free(data->ula);
 	free(data->ce);
 	free(data->xh);
+
+	cache_cleanup_old(db);
 
 	/* globals */
 	xmlproc_cleanup_global();
@@ -104,7 +106,7 @@ void http_destroy(void *d){
 }
 
 
-void http_fetch_init(struct urllist *ul, void *d){
+void http_fetch_init(struct urllist *ul, void *d, void *db){
 	struct http_data *data=(struct http_data*)d;
 	int npara=5;
 	struct urllist *tul;
@@ -123,6 +125,8 @@ void http_fetch_init(struct urllist *ul, void *d){
 
 	data->anp=0;
 	data->rnp=0;
+
+	cache_init_cleanup(db);
 }
 
 int http_get_fds(fd_set *fdr, fd_set *fdw, fd_set *fde, void *d){
@@ -194,7 +198,7 @@ int process_handles(struct http_data *data){
 	return process_multi_group(data);
 }
 
-void load_new_handles(struct urllist *ul, struct http_data *data){
+void load_new_handles(struct urllist *ul, struct http_data *data, void *db){
 	struct urllist *tul;
 	int i;
 
@@ -248,20 +252,20 @@ void load_new_handles(struct urllist *ul, struct http_data *data){
 	return;
 
 empty:
-	cleanup_handles(data);
+	cleanup_handles(data,db);
 }
 
 int handle_urls(struct urllist *ul, void *d, void *db){
 	struct http_data *data=(struct http_data*)d;
 
 	if(data->cm==NULL){
-		http_fetch_init(ul,d);
-		load_new_handles(ul,data);
+		http_fetch_init(ul,d,db);
+		load_new_handles(ul,data,db);
 	}
 
 	if(process_handles(data)){
 		finish_batch(data,db);
-		load_new_handles(ul,data);
+		load_new_handles(ul,data,db);
 	}
 
 	return data->cm==NULL;
