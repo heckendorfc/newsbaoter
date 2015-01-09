@@ -3,8 +3,11 @@
  * that can be found in the LICENSE file.
  */
 
-#include <unistd.h>
+#ifdef __linux__
+#define _XOPEN_SOURCE 500
+#endif
 #include <time.h>
+#include <unistd.h>
 #include <string.h>
 #include <libxml/xmlmemory.h>
 #include <libxml/debugXML.h>
