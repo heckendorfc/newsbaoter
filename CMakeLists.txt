@@ -18,7 +18,7 @@ add_definitions(-DNB_VERS_S="0.1")
 add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share/newsbaoter" )
 #add_definitions(-DLIB_PATH="${INSTALL_LIBDIR}" )
 
-set(CURSES_USE_NCURSES TRUE)
+set(CURSESW_USE_NCURSESW TRUE)
 
 find_package (LibXslt REQUIRED)
 find_package (LibXml2 REQUIRED)

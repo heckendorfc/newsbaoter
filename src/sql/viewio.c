@@ -3,9 +3,12 @@
  * that can be found in the LICENSE file.
  */
 
+#ifdef __linux__
+#define _XOPEN_SOURCE 500
+#endif
+#include <time.h>
 #include <stdio.h>
 #include <string.h>
-#include <time.h>
 #include <unistd.h>
 #include <stdarg.h>
 
