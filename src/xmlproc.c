@@ -51,7 +51,7 @@ static char *feed_fields[]={
 };
 #define NFEEDFIELD FFI_PUBLIC_DONE
 
-static void xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db);
+static int xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db);
 
 /* Parsing XML text into data structure */
 
@@ -126,9 +126,11 @@ void xmlproc_cleanup(struct xmlproc_data *h){
 	}
 }
 
-int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
+int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db, int *newentry){
 	int res;
 	int ret=0;
+
+	*newentry=0;
 
 	if(!h->ctx)
 		return 1;
@@ -149,7 +151,7 @@ int xmlproc_finish(struct xmlproc_data *h, sqlite3 *db){
 
 	xmlproc_transform(h);
 
-	xmlproc_update_cache(h,db);
+	*newentry=xmlproc_update_cache(h,db);
 
 done:
 	xmlFreeParserCtxt(h->ctx);
@@ -467,12 +469,20 @@ static int update_entries(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 	return 0;
 }
 
-static void xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db){
+static int xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db){
+	int n_unr[2];
 	xmlNode *root = xmlDocGetRootElement(h->doc);
 
+	n_unr[0]=get_num_unread(db);
 	update_feed(root,h,db);
 	update_entries(root,h,db);
+	n_unr[1]=get_num_unread(db);
 
 	xmlproc_free_doc(h->doc);
 	h->doc=NULL;
+
+	if(n_unr[0]<n_unr[1]){
+		return 1;
+	}
+	return 0;
 }

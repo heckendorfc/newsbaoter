@@ -21,6 +21,7 @@ struct http_data{
 	int anp;
 	int rnp;
 	struct timeval timeout;
+	int newentry;
 };
 
 static size_t write_memory_cb(void *contents, size_t size, size_t nmemb, void *userp){
@@ -125,6 +126,7 @@ void http_fetch_init(struct urllist *ul, void *d, void *db){
 
 	data->anp=0;
 	data->rnp=0;
+	data->newentry=0;
 
 	cache_init_cleanup(db);
 }
@@ -148,6 +150,7 @@ void finish_batch(struct http_data *data, void *db){
 	int i;
 	CURLMsg *msg; /* for picking up messages with the transfer status */
 	int msgs_left; /* how many messages are left */
+	int newentry;
 
 	while ((msg = curl_multi_info_read(data->cm, &msgs_left))) {
 		if (msg->msg == CURLMSG_DONE) {
@@ -176,12 +179,14 @@ void finish_batch(struct http_data *data, void *db){
 				continue;
 			}
 
-			if(xmlproc_finish(data->xh+idx,db)){
+			if(xmlproc_finish(data->xh+idx,db,&newentry)){
 				if(data->ula[idx]->data.n_httperr<0)
 					data->ula[idx]->data.n_httperr=1;
 				else
 					data->ula[idx]->data.n_httperr++;
 			}
+			data->newentry|=newentry;
+
 			//ula[idx]->data.doc=xh[idx].doc;
 			//ula[idx]->data.info.feedid=xh[idx].feedid;
 		}
@@ -268,5 +273,5 @@ int handle_urls(struct urllist *ul, void *d, void *db){
 		load_new_handles(ul,data,db);
 	}
 
-	return data->cm==NULL;
+	return data->cm==NULL?data->newentry:-1;
 }

@@ -36,7 +36,7 @@ enum nbcolor_cp{
 #define FB_STYLE FII_STYLE((i!=cursor_i?CP_LISTNORMAL:CP_LISTFOCUS),i)
 
 struct nb_config{
-	char *proxy; /* "socks5://localhost:1234" */ /* TODO (untested) */
+	char *proxy; /* "socks5://localhost:1234" */
 	int dl_retries;
 	int auto_reload;
 	int reload_time;
@@ -44,7 +44,7 @@ struct nb_config{
 	int show_read_entries;
 	int parallel_reload;
 	int confirm_exit;
-	int notify_beep; /* TODO (untested) */
+	int notify_beep;
 	int entry_retention;
 	char **pager;
 	int html_pager;

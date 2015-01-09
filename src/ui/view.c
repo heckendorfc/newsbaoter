@@ -175,9 +175,11 @@ void notify_refresh_footer(struct mainwindow *mw){
 }
 
 int refresh_all(struct mainwindow *mw){
+	int uret;
 	notify_refresh_footer(mw);
 
-	if(handle_urls(mw->ul,mw->httpdata,mw->db)){
+	if((uret=handle_urls(mw->ul,mw->httpdata,mw->db))>=0){
+		mw->beep_request=uret && global_config.notify_beep;
 		request_list_update(mw);
 		update_view(mw);
 	}
@@ -449,6 +451,7 @@ void run_ui(struct mainwindow *mw){
 	fd_set fdread;
 	fd_set fdwrite;
 	fd_set fdexec;
+	int uret;
 	int sret;
 	int found=0;
 	struct timeval *timeout;
@@ -524,7 +527,8 @@ void run_ui(struct mainwindow *mw){
 				update_view(mw);
 		}
 		if(sret==0 || sret-found>0){
-			if(handle_urls(mw->ul,mw->httpdata,mw->db)){
+			if((uret=handle_urls(mw->ul,mw->httpdata,mw->db))>=0){
+				mw->beep_request=uret && global_config.notify_beep;
 				gettimeofday(&last_time,NULL);
 				request_list_update(mw);
 				update_view(mw);
