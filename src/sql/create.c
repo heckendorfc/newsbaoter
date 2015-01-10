@@ -50,15 +50,21 @@ static int create_db(sqlite3 *conn){
 }
 #define ENT_TEXT_START 5
 
-void cache_init_cleanup(sqlite3 *conn){
-	nb_sqlite3_exec(conn,"UPDATE Entry SET Current=0",NULL,NULL,NULL);
-}
-
-void cache_cleanup_old(sqlite3 *conn){
+void cache_init_cleanup(sqlite3 *conn, rowid_t feedid){
 	const int qlen=256;
 	char query[qlen];
 
-	nb_qnprintf(query,qlen,"DELETE FROM Entry WHERE Current=0 AND Viewed>0 AND PubDate<strftime('%%s','now')-%d",global_config.entry_retention);
+	nb_qnprintf(query,qlen,"UPDATE Entry SET Current=0 WHERE FeedID=%ld",feedid);
+
+	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
+}
+
+void cache_cleanup_old(sqlite3 *conn, rowid_t feedid){
+	const int qlen=256;
+	char query[qlen];
+
+	nb_qnprintf(query,qlen,"DELETE FROM Entry WHERE FeedID=%ld AND Current=0 AND Viewed>0 AND PubDate<strftime('%%s','now')-%d",feedid,global_config.entry_retention);
+
 	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
 }
 

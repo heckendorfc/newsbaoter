@@ -52,8 +52,6 @@ void cleanup_handles(struct http_data *data, void *db){
 	free(data->ce);
 	free(data->xh);
 
-	cache_cleanup_old(db);
-
 	/* globals */
 	xmlproc_cleanup_global();
 	curl_global_cleanup();
@@ -127,8 +125,6 @@ void http_fetch_init(struct urllist *ul, void *d, void *db){
 	data->anp=0;
 	data->rnp=0;
 	data->newentry=0;
-
-	cache_init_cleanup(db);
 }
 
 int http_get_fds(fd_set *fdr, fd_set *fdw, fd_set *fde, void *d){

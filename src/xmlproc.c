@@ -463,11 +463,16 @@ static int update_entry(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 
 static int update_entries(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 	xmlNode *cur_node=root->children;
+
+	cache_init_cleanup(db,h->feedid);
+
 	for(;cur_node;cur_node=cur_node->next){
 		if(cur_node->type==XML_ELEMENT_NODE && strcmp((const char*)cur_node->name,"entry")==0){
 			update_entry(cur_node,h,db);
 		}
 	}
+
+	cache_cleanup_old(db,h->feedid);
 
 	return 0;
 }
