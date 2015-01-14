@@ -481,6 +481,9 @@ static int xmlproc_update_cache(struct xmlproc_data *h, sqlite3 *db){
 	int n_unr[2];
 	xmlNode *root = xmlDocGetRootElement(h->doc);
 
+	if(root==NULL)
+		return 0;
+
 	n_unr[0]=get_num_unread(db);
 	update_feed(root,h,db);
 	update_entries(root,h,db);
