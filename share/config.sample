@@ -11,7 +11,7 @@ unbind-key      o
 ##       One of: exit, next, prev, select, reload-all,
 ##               mark-feed-read, mark-all-feeds-read,
 ##               toggle-article-read, high-item, low-item.
-##               mid-item, help.
+##               mid-item, redraw-screen, help.
 bind-key        O       select
 
 ### Sets the pager command for viewing articles

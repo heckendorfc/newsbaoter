@@ -70,6 +70,11 @@ int handle_toggle_read(struct mainwindow *mw){
 	return toggle_read(mw);
 }
 
+int handle_redraw_screen(struct mainwindow *mw){
+	catchresize(0);
+	return KH_RET_UPDATE;
+}
+
 /* Defaults and Infrastructure */
 
 struct keylist{
@@ -91,6 +96,7 @@ static struct keylist default_keys[]={
 	{'A',KHN(catchup_feed)},
 	{'C',KHN(catchup_all)},
 	{'N',KHN(toggle_read)},
+	{'W',KHN(redraw_screen)},
 	{'?',KHN(print_key_pairs)},
 	{'\0',NULL}
 };
@@ -112,6 +118,7 @@ static struct handlerlist handler_names[]={
 	{"mark-feed-read",KHN(catchup_feed)},
 	{"mark-all-feeds-read",KHN(catchup_all)},
 	{"toggle-article-read",KHN(toggle_read)},
+	{"redraw-screen",KHN(redraw_screen)},
 	{"help",KHN(print_key_pairs)},
 	{NULL,NULL}
 };
