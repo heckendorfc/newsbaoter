@@ -11,6 +11,12 @@
 
 #include "../ui/ui_common.h"
 
+/* Number of repeated refresh cycles with the entry missing before it gets deleted */
+#define CYCLES_UNTIL_DELETE 2
+
+#define valstr(x) ppstr(x)
+#define ppstr(x) #x
+
 typedef sqlite3_int64 rowid_t;
 
 int nb_qnprintf(char *s, int n, char *fmt, ...);

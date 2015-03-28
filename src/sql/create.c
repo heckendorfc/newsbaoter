@@ -54,7 +54,7 @@ void cache_init_cleanup(sqlite3 *conn, rowid_t feedid){
 	const int qlen=256;
 	char query[qlen];
 
-	nb_qnprintf(query,qlen,"UPDATE Entry SET Current=0 WHERE FeedID=%ld",feedid);
+	nb_qnprintf(query,qlen,"UPDATE Entry SET Current=Current-1 WHERE FeedID=%ld",feedid);
 
 	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
 }
@@ -63,7 +63,7 @@ void cache_cleanup_old(sqlite3 *conn, rowid_t feedid){
 	const int qlen=256;
 	char query[qlen];
 
-	nb_qnprintf(query,qlen,"DELETE FROM Entry WHERE FeedID=%ld AND Current=0 AND Viewed>0 AND PubDate<strftime('%%s','now')-%d",feedid,global_config.entry_retention);
+	nb_qnprintf(query,qlen,"DELETE FROM Entry WHERE FeedID=%ld AND Current<=-" valstr(CYCLES_UNTIL_DELETE) " AND Viewed>0 AND PubDate<strftime('%%s','now')-%d",feedid,global_config.entry_retention);
 
 	nb_sqlite3_exec(conn,query,NULL,NULL,NULL);
 }
