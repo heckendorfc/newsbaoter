@@ -14,7 +14,7 @@ if (NOT DEFINED INSTALL_LIBDIR)
 	set(INSTALL_LIBDIR ${CMAKE_INSTALL_PREFIX}/lib)
 endif ()
 
-add_definitions(-DNB_VERS_S="0.1")
+add_definitions(-DNB_VERS_S="1.01")
 add_definitions(-DSHARE_PATH="${CMAKE_INSTALL_PREFIX}/share/newsbaoter" )
 #add_definitions(-DLIB_PATH="${INSTALL_LIBDIR}" )
 
