@@ -1,6 +1,6 @@
 newsbaoter  --  News feed reader
 
-Currently supports RSS 2.0, Atom 0.3, Atom 1.0, and RDF
+Currently supports RSS 0.9[1-4] & 2.0, Atom 0.3 & 1.0, and RDF
 
 IRC: #baot on irc.rizon.net
 
