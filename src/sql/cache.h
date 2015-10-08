@@ -32,5 +32,6 @@ void cache_toggle_read_entry(sqlite3 *conn, rowid_t id, int v);
 void cache_read_feed(sqlite3 *conn, rowid_t feedid);
 int get_num_unread(sqlite3 *db);
 int cache_next_unread(struct mainwindow *mw, int id, sqlite3 *db);
+int cache_get_new_uid(int feedid, char *dst, int size, sqlite3 *db);
 
 #endif

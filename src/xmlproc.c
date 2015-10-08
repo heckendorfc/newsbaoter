@@ -80,7 +80,8 @@ void xmlproc_free_doc(xmlDocPtr doc){
 #define SHARE_PATH "/tmp"
 #endif
 
-#define RSS_XSL "RSS_20_xsl.xml"
+#define RSS_20_XSL "RSS_20_xsl.xml"
+#define RSS_09_XSL "RSS_09_xsl.xml"
 #define ATOM03_XSL "Atom_03_xsl.xml"
 #define ATOM10_XSL "Atom_10_xsl.xml"
 #define RDF_XSL "RDF_xsl.xml"
@@ -101,8 +102,18 @@ char* get_spec_sheet(xmlDocPtr doc){
 	}
 	else if(root && root->name && strcmp((const char*)root->name,"RDF")==0)
 		return XSS(RDF_XSL);
+	else if(root && root->name && strcmp((const char*)root->name,"rss")==0){
+		char *ret=XSS(RSS_09_XSL);
+		xmlChar *a=xmlGetProp(root,(xmlChar*)"version");
+		if(a){
+			if(strcmp((const char*)a,"2.0")==0)
+				ret=XSS(RSS_20_XSL);
+			xmlFree(a);
+		}
+		return ret;
+	}
 
-	return XSS(RSS_XSL);
+	return XSS(RSS_09_XSL);
 }
 
 static void xmlproc_transform(struct xmlproc_data *h){
@@ -437,6 +448,8 @@ static int update_entry(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 	int i;
 	char pdate[20];
 	char udate[20];
+	char tmpstr[100];
+	char tmptitle[50];
 	struct tm tp;
 
 	for(i=0;i<NENTRYFIELD;i++)
@@ -454,6 +467,25 @@ static int update_entry(xmlNode *root, struct xmlproc_data *h, sqlite3 *db){
 		ei[EFI_UDATE]=udate;
 		if(!ei[EFI_PDATE])
 			ei[EFI_PDATE]=udate;
+	}
+
+	if(!ei[EFI_UID]){
+		cache_get_new_uid(h->feedid,tmpstr,100,db);
+		ei[EFI_UID]=tmpstr;
+	}
+
+	if(!ei[EFI_TITLE]){
+		ei[EFI_TITLE]=tmptitle;
+		if(ei[EFI_DESC]){
+			strncpy(tmptitle,ei[EFI_DESC],49);
+		}
+		else if(ei[EFI_CONTENT]){
+			strncpy(tmptitle,ei[EFI_CONTENT],49);
+		}
+		else{
+			ei[EFI_TITLE]=ei[EFI_UID];
+		}
+		tmptitle[49]=0;
 	}
 
 	cache_update_entry(db,h->feedid,ei);

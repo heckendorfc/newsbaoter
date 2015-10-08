@@ -1,0 +1,219 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!--
+Copyright (c) 2009, Yoav Aviram
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions
+are met:
+
+* Redistributions of source code must retain the above copyright
+notice, this list of conditions and the following disclaimer.
+* Redistributions in binary form must reproduce the above copyright
+notice, this list of conditions and the following disclaimer in
+the documentation and/or other materials provided with the distribution.
+* Neither the name of the author nor the names of its
+contributors may be used to endorse or promote products derived
+from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE.
+-->
+<xsl:stylesheet version="1.0"
+		xmlns:content="http://purl.org/rss/1.0/modules/content/"
+		xmlns:dc="http://purl.org/dc/elements/1.1/"
+		xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+		xmlns:fn="http://www.w3.org/2005/xpath-functions">
+	<xsl:output method="xml" version="1.0" encoding="UTF-8" omit-xml-declaration="yes" indent="no" />
+	
+	<xsl:template match="/">
+		<xsl:apply-templates select="rss/channel" />
+	</xsl:template>
+	
+	<xsl:template match="rss/channel">
+		<feed format="RSS" version="0.91" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="feed_xsd.txt">
+			<xsl:apply-templates select="title" />
+			<xsl:apply-templates select="link" />
+			<xsl:apply-templates select="description" />
+			<xsl:apply-templates select="language | dc:language" />
+			<xsl:apply-templates select="copyright | dc:rights" />
+			<categories>
+				<xsl:apply-templates select="category" />
+			</categories>
+			<xsl:apply-templates select="managingEditor" />
+			<xsl:apply-templates select="image" />
+			
+			<xsl:apply-templates select="item" />
+		</feed>
+	</xsl:template>
+
+	<xsl:template name="FormatDate">
+		<xsl:value-of select="." />
+	</xsl:template> 
+
+	<xsl:template match="pubDate | dc:date">
+		<publishDateTime>
+			<xsl:variable name="DateTime" select="." />
+			<xsl:variable name="day-temp">
+				<xsl:value-of select="substring-after($DateTime,', ')" />
+			</xsl:variable>
+			<xsl:variable name="day">
+				<xsl:value-of select="substring-before($day-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="mo-temp">
+				<xsl:value-of select="substring-after($day-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="mo">
+				<xsl:value-of select="substring-before($mo-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="year-temp">
+				<xsl:value-of select="substring-after($mo-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="year">
+				<xsl:value-of select="substring-before($year-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="time-temp">
+				<xsl:value-of select="substring-after($year-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="time">
+				<xsl:value-of select="substring-before($time-temp,' ')" />
+			</xsl:variable>
+			<xsl:variable name="tz">
+				<xsl:value-of select="substring-after($time-temp,' ')" />
+			</xsl:variable>
+			<xsl:value-of select="$year"/>
+			<xsl:value-of select="'-'"/>
+			<xsl:choose>
+				<xsl:when test="$mo = 'jan' or $mo = 'Jan'">01</xsl:when>
+				<xsl:when test="$mo = 'feb' or $mo = 'Feb'">02</xsl:when>
+				<xsl:when test="$mo = 'mar' or $mo = 'Mar'">03</xsl:when>
+				<xsl:when test="$mo = 'apr' or $mo = 'Apr'">04</xsl:when>
+				<xsl:when test="$mo = 'may' or $mo = 'May'">05</xsl:when>
+				<xsl:when test="$mo = 'jun' or $mo = 'Jun'">06</xsl:when>
+				<xsl:when test="$mo = 'jul' or $mo = 'Jul'">07</xsl:when>
+				<xsl:when test="$mo = 'aug' or $mo = 'Aug'">08</xsl:when>
+				<xsl:when test="$mo = 'sep' or $mo = 'Sep'">09</xsl:when>
+				<xsl:when test="$mo = 'oct' or $mo = 'Oct'">10</xsl:when>
+				<xsl:when test="$mo = 'nov' or $mo = 'Nov'">11</xsl:when>
+				<xsl:when test="$mo = 'dec' or $mo = 'Dec'">12</xsl:when>
+			</xsl:choose>
+			<xsl:value-of select="'-'"/>
+			<xsl:if test="(string-length($day) &lt; 2)">
+				<xsl:value-of select="0"/>
+			</xsl:if>
+			<xsl:value-of select="$day"/>
+			<xsl:value-of select="' '"/>
+			<xsl:value-of select="$time"/>
+			<xsl:value-of select="' '"/>
+			<xsl:if test="(string-length($tz) &lt; 5)">
+				<xsl:value-of select="'+0000'"/>
+			</xsl:if>
+			<xsl:value-of select="$tz"/>
+		</publishDateTime>
+	</xsl:template>
+
+	<xsl:template match="title">
+		<title>
+			<xsl:value-of select="." />
+		</title>
+	</xsl:template>
+	
+	<xsl:template match="link">
+		<xsl:value-of select="." />
+	</xsl:template>
+	
+	<xsl:template match="description">
+		<description>
+			<xsl:value-of select="." />
+		</description>
+	</xsl:template>
+	
+	<xsl:template match="language | dc:language">
+		<language>
+			<xsl:value-of select="." />
+		</language>
+	</xsl:template>
+	
+	<xsl:template match="copyright | dc:rights">
+		<copyright>
+			<xsl:value-of select="." />
+		</copyright>
+	</xsl:template>
+
+	<xsl:template match="category">
+		<category>
+			<xsl:value-of select="." />
+		</category>
+	</xsl:template>
+	
+	<xsl:template match="image">
+		<imageUrl>
+			<xsl:value-of select="url" />
+		</imageUrl>
+		<imageText>
+			<xsl:value-of select="title" />
+		</imageText>
+	</xsl:template>
+	
+	<xsl:template match="author | managingEditor | dc:creator">
+		<authorEmail>
+			<xsl:value-of select="." />
+		</authorEmail>
+	</xsl:template>
+	
+	<xsl:template match="enclosure">
+		<enclosure>
+			<url>
+				<xsl:value-of select="@url" />
+			</url>
+			<size>
+				<xsl:value-of select="@length" />
+			</size>
+			<type>
+				<xsl:value-of select="@type" />
+			</type>
+		</enclosure>
+	</xsl:template>
+
+
+	<xsl:template match="item">
+		<entry>
+			<entryUniqueId>
+				<xsl:apply-templates select="link" />
+			</entryUniqueId>
+			<xsl:apply-templates select="pubDate | dc:date" />
+			<xsl:apply-templates select="title" />
+			<url>
+				<xsl:apply-templates select="link" />
+			</url>
+			<enclosures>
+				<xsl:apply-templates select="enclosure" />
+			</enclosures>
+			<xsl:apply-templates select="author | dc:creator" />
+			<categories>
+				<xsl:apply-templates select="category" />
+			</categories>
+			<description/>
+			<content>
+				<xsl:choose>
+					<xsl:when test="content:encoded">
+						<xsl:value-of select="content:encoded"/>
+					</xsl:when>
+					<xsl:otherwise>
+						<xsl:value-of select="description"/>
+					</xsl:otherwise>
+				</xsl:choose>
+			</content>
+		</entry>
+	</xsl:template>
+
+</xsl:stylesheet>

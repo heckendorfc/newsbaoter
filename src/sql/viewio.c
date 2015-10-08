@@ -31,6 +31,17 @@ int nb_qnprintf(char *s, int n, char *fmt, ...){
 	return cnt;
 }
 
+struct str_res{
+	int size;
+	char *val;
+};
+
+static int get_str_cb(void *data, int n_col, char **row, char **titles){
+	struct str_res *res=(struct str_res*)data;
+	strncpy(res->val,row[0]?row[0]:"",res->size);
+	return SQLITE_OK;
+}
+
 static int get_long_cb(void *data, int n_col, char **row, char **titles){
 	*((long*)data)=strtol(row[0]?row[0]:"0",NULL,10);
 	return SQLITE_OK;
@@ -304,5 +315,19 @@ int get_num_unread(sqlite3 *db){
 }
 
 int cache_next_unread(struct mainwindow *mw, int id, sqlite3 *db){
+	return 0;
+}
+
+int cache_get_new_uid(int feedid, char *dst, int size, sqlite3 *db){
+	struct str_res res;
+
+	if(size<65)
+		return 1;
+
+	res.val=dst;
+	res.size=size;
+
+	nb_sqlite3_exec(db,"SELECT hex(randomblob(32))",get_str_cb,&res,NULL);
+
 	return 0;
 }
