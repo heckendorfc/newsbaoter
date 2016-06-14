@@ -97,6 +97,7 @@ int copy_int(void *d, char *next){
 }
 
 static const char *color_type_strings[]={
+	"notacolor",
 	"listnormal",
 	"listfocus",
 	"listnormal_unread",

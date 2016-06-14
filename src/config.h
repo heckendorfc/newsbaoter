@@ -21,7 +21,8 @@ typedef struct nbcolor_t{
 }nbcolor_t;
 
 enum nbcolor_cp{
-	CP_LISTNORMAL=0,
+	CP_NOTACOLOR=0,
+	CP_LISTNORMAL=1,
 	CP_LISTFOCUS,
 	CP_LISTNORMAL_UR,
 	CP_LISTFOCUS_UR,
