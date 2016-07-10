@@ -19,6 +19,18 @@
 
 typedef sqlite3_int64 rowid_t;
 
+enum pubentry_enum{
+	PUBENTRY_EID=0,
+	PUBENTRY_FID,
+	PUBENTRY_TITLE,
+	PUBENTRY_DATE,
+	PUBENTRY_URL,
+	PUBENTRY_ANAME,
+	PUBENTRY_AEMAIL,
+	PUBENTRY_DESC,
+	PUBENTRY_CONTENT,
+};
+
 int nb_qnprintf(char *s, int n, char *fmt, ...);
 int nb_sqlite3_exec(sqlite3 *connection, const char *sql, int (*callback)(void*,int,char**,char**), void *arg, char **errmsg);
 sqlite3* init_db();

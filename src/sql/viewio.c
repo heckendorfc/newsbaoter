@@ -279,6 +279,7 @@ struct write_entry_info{
 static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 	struct write_entry_info *wi = (struct write_entry_info*)data;
 	int i;
+	int len;
 
 	/* i=0 is FeedID; i=1 is EntryID; skip them */
 	for(i=2;i<n_col;i++){
@@ -286,7 +287,16 @@ static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 			continue;
 		write(wi->fd,titles[i],strlen(titles[i]));
 		write(wi->fd,": ",2);
-		write(wi->fd,row[i],strlen(row[i]));
+		if(global_config.html_pager && i==PUBENTRY_URL){
+			len=strlen(row[i]);
+			write(wi->fd,"<a href=\"",9);
+			write(wi->fd,row[i],len);
+			write(wi->fd,"\">",2);
+			write(wi->fd,row[i],len);
+			write(wi->fd,"</a>",4);
+		} else{
+			write(wi->fd,row[i],strlen(row[i]));
+		}
 		if(global_config.html_pager)
 			write(wi->fd,"<br/>",5);
 		write(wi->fd,"\n",1);
