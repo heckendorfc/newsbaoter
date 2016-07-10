@@ -48,6 +48,7 @@ struct nb_config{
 	int notify_beep;
 	int entry_retention;
 	char **pager;
+	char **downloader;
 	int html_pager;
 	nbcolor_t colors[CP_NULL];
 };

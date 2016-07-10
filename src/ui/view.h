@@ -16,6 +16,7 @@ int low_item(struct mainwindow *mw);
 int next_unread_item(struct mainwindow *mw);
 int prev_item(struct mainwindow *mw);
 int select_item(struct mainwindow *mw);
+int download_item(struct mainwindow *mw);
 int context_exit(struct mainwindow *mw);
 int refresh_all(struct mainwindow *mw);
 int catchup_feed(struct mainwindow *mw);

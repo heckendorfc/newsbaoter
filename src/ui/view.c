@@ -169,6 +169,15 @@ int select_item(struct mainwindow *mw){
 	return KH_RET_UPDATE;
 }
 
+int download_item(struct mainwindow *mw){
+	if(mw->ctx_type==CTX_ENTRIES){
+		int tmp_id;
+		tmp_id=mw->data.lv[cursor_i].id;
+		download_entry(mw,tmp_id);
+	}
+	return KH_RET_UPDATE;
+}
+
 void notify_refresh_footer(struct mainwindow *mw){
 	mvwaddstr(foot_w,0,FOOT_WIDTH-21,"Refreshing Feeds");
 	wrefresh(foot_w);

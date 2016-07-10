@@ -8,8 +8,9 @@
 
 #include "ui_common.h"
 
-void wait_for_pager(struct mainwindow *mw, int pid);
+void wait_for_process(struct mainwindow *mw, int pid);
 int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd);
+int download_entry(struct mainwindow *mw, int id);
 int pipe_entry(struct mainwindow *mw, int id);
 int request_list_update(struct mainwindow *mw);
 int catchup_entries(struct mainwindow *mw, int id);

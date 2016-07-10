@@ -54,6 +54,10 @@ int handle_select(struct mainwindow *mw){
 	return select_item(mw);
 }
 
+int handle_download(struct mainwindow *mw){
+	return download_item(mw);
+}
+
 int handle_refresh_all(struct mainwindow *mw){
 	return refresh_all(mw);
 }
@@ -92,6 +96,7 @@ static struct keylist default_keys[]={
 	{'H',KHN(high_item)},
 	//{KEY_ENTER,KHN(select)},
 	{'o',KHN(select)},
+	{'D',KHN(download)},
 	{'R',KHN(refresh_all)},
 	{'A',KHN(catchup_feed)},
 	{'C',KHN(catchup_all)},
@@ -111,6 +116,7 @@ static struct handlerlist handler_names[]={
 	KHF(next),
 	KHF(prev),
 	KHF(select),
+	KHF(download),
 	{"high-item",KHN(high_item)},
 	{"mid-item",KHN(mid_item)},
 	{"low-item",KHN(low_item)},
@@ -131,6 +137,14 @@ handler_t find_handler(char *s){
 			break;
 
 	return handler_names[i].handler;
+}
+
+void unset_handler(char *s){
+	int i;
+
+	for(i=0;handler_names[i].name;i++)
+		if(strcmp(handler_names[i].name,s)==0)
+			handler_names[i].handler=NULL;
 }
 
 void bind_key(int c, handler_t handler){
@@ -196,7 +210,7 @@ int handle_print_key_pairs(struct mainwindow *mw){
 
 	close(fd);
 
-	wait_for_pager(mw,pid);
+	wait_for_process(mw,pid);
 
 	reset_prog_mode();
 

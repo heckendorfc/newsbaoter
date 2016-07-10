@@ -276,6 +276,20 @@ struct write_entry_info{
 	int fd;
 };
 
+static int write_entry_raw_cb(void *data, int n_col, char **row, char **titles){
+	struct write_entry_info *wi = (struct write_entry_info*)data;
+	int i;
+	int len;
+
+	for(i=0;i<n_col;i++){
+		if(row[i]==NULL || row[i][0]==0)
+			continue;
+		write(wi->fd,row[i],strlen(row[i]));
+	}
+
+	return SQLITE_OK;
+}
+
 static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 	struct write_entry_info *wi = (struct write_entry_info*)data;
 	int i;
@@ -305,17 +319,24 @@ static int write_entry_cb(void *data, int n_col, char **row, char **titles){
 	return SQLITE_OK;
 }
 
-int cache_write_entry(struct mainwindow *mw, int id, int fd, sqlite3 *db){
+int cache_write_entry_field(struct mainwindow *mw, int id, int fd, sqlite3 *db, char *field){
 	const int qlen=256;
 	char query[qlen];
 	struct write_entry_info wi = {.s=query, .len=qlen, .fd=fd};
 
 	cache_toggle_read_entry(db,id,1);
 
-	nb_qnprintf(query,qlen,"SELECT * FROM PubEntry WHERE EntryID=%d",id);
-	nb_sqlite3_exec(db,query,write_entry_cb,&wi,NULL);
+	nb_qnprintf(query,qlen,"SELECT %s FROM PubEntry WHERE EntryID=%d",field,id);
+	if(*field=='*')
+		nb_sqlite3_exec(db,query,write_entry_cb,&wi,NULL);
+	else
+		nb_sqlite3_exec(db,query,write_entry_raw_cb,&wi,NULL);
 
 	return 0;
+}
+
+int cache_write_entry(struct mainwindow *mw, int id, int fd, sqlite3 *db){
+	return cache_write_entry_field(mw,id,fd,db,"*");
 }
 
 int get_num_unread(sqlite3 *db){

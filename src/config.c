@@ -30,6 +30,7 @@ struct nb_config global_config={
 	.notify_beep=0,
 	.entry_retention=3*24*60*60,
 	.pager=NULL,
+	.downloader=NULL,
 	.html_pager=0,
 };
 
@@ -265,6 +266,7 @@ struct config_args{
 	{"unbind-key",0x0,config_bind_key},
 	{"cache-retention",NBCO(entry_retention),copy_int},
 	{"pager",NBCO(pager),copy_strarr},
+	{"downloader",NBCO(downloader),copy_strarr},
 	{"html-pager",NBCO(html_pager),copy_int},
 	{NULL,0,NULL}
 };
@@ -441,6 +443,9 @@ void read_config_options_file(){
 		global_config.pager[0]=strdup("/usr/bin/less");
 		global_config.pager[1]=NULL;
 	}
+
+	if(global_config.downloader==NULL)
+		unset_handler("download");
 
 	clean_conf_read(&c);
 

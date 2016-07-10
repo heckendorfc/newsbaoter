@@ -39,6 +39,7 @@ void cache_cleanup_old(sqlite3 *conn, rowid_t feedid);
 rowid_t cache_update_feed(sqlite3 *conn, const char **data);
 rowid_t cache_update_entry(sqlite3 *conn, rowid_t feedid, const char **data);
 int cache_gen_lines(struct mainwindow *mw, sqlite3 *db);
+int cache_write_entry_field(struct mainwindow *mw, int id, int fd, sqlite3 *db, char *field);
 int cache_write_entry(struct mainwindow *mw, int id, int fd, sqlite3 *db);
 void cache_toggle_read_entry(sqlite3 *conn, rowid_t id, int v);
 void cache_read_feed(sqlite3 *conn, rowid_t feedid);

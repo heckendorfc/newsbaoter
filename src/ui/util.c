@@ -15,7 +15,7 @@
 #include "../config.h"
 #include "../sql/cache.h"
 
-void wait_for_pager(struct mainwindow *mw, int pid){
+void wait_for_process(struct mainwindow *mw, int pid){
 	int status;
 	pid_t ret;
 
@@ -26,7 +26,7 @@ void wait_for_pager(struct mainwindow *mw, int pid){
 	}while(!(ret==pid && (WIFEXITED(status) || WIFSIGNALED(status))));
 }
 
-int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
+int pipe_to_process(struct mainwindow *mw, int *pid, int *fd, char **args){
 	int pipefd[2];
 
 	pipe(pipefd);
@@ -34,9 +34,6 @@ int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 	*pid=fork();
 
 	if(*pid==0){ /* child */
-		//char *pager="/usr/bin/less"; /* TODO: find path via cmake? */
-		//char *args[2]={pager,(char*)0};
-		char **args=global_config.pager;
 		dup2(pipefd[0],0);
 		close(pipefd[0]);
 		close(pipefd[1]);
@@ -55,20 +52,32 @@ int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
 	return 0;
 }
 
-int pipe_entry(struct mainwindow *mw, int id){
+int pipe_to_pager(struct mainwindow *mw, int *pid, int *fd){
+	return pipe_to_process(mw,pid,fd,global_config.pager);
+}
+
+int pipe_fields(struct mainwindow *mw, int id, char **args, char *fields){
 	int pid,fd;
 
 	def_prog_mode();
 	endwin();
 
-	pipe_to_pager(mw,&pid,&fd);
-	cache_write_entry(mw,id,fd,mw->db);
+	pipe_to_process(mw,&pid,&fd,args);
+	cache_write_entry_field(mw,id,fd,mw->db,fields);
 	close(fd);
-	wait_for_pager(mw,pid);
+	wait_for_process(mw,pid);
 
 	reset_prog_mode();
 
 	return request_list_update(mw);
+}
+
+int download_entry(struct mainwindow *mw, int id){
+	return pipe_fields(mw,id,global_config.downloader,"URL");
+}
+
+int pipe_entry(struct mainwindow *mw, int id){
+	return pipe_fields(mw,id,global_config.pager,"*");
 }
 
 int request_list_update(struct mainwindow *mw){
