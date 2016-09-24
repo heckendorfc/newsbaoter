@@ -143,16 +143,21 @@ int prev_item(struct mainwindow *mw){
 	return ret;
 }
 
+static void view_to_feeds(struct mainwindow *mw){
+	mw->page=backup_page_num;
+	mw->ctx_type=CTX_FEEDS;
+	mw->ctx_id=0;
+	request_list_update(mw);
+}
+
 int select_item(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_FEEDS){
 		mw->ctx_type=CTX_ENTRIES;
 		mw->ctx_id=mw->data.lv[cursor_i].id;
 		backup_page_num=mw->page;
 		mw->page=0;
-		if(request_list_update(mw)){ /* No data? Undo */
-			mw->page=backup_page_num;
-			mw->ctx_type=CTX_FEEDS;
-			mw->ctx_id=0;
+		if(request_list_update(mw)){
+			view_to_feeds(mw);
 			return KH_RET_OK;
 		}
 		restyle_focus_item(mw,CP_LISTNORMAL);
@@ -164,7 +169,8 @@ int select_item(struct mainwindow *mw){
 		int tmp_id;
 		//tmp_id=(mw->page*mw->body_len)+cursor_i;
 		tmp_id=mw->data.lv[cursor_i].id;
-		pipe_entry(mw,tmp_id);
+		if(pipe_entry(mw,tmp_id))
+			view_to_feeds(mw);
 	}
 	return KH_RET_UPDATE;
 }
@@ -173,7 +179,8 @@ int download_item(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_ENTRIES){
 		int tmp_id;
 		tmp_id=mw->data.lv[cursor_i].id;
-		download_entry(mw,tmp_id);
+		if(download_entry(mw,tmp_id))
+			view_to_feeds(mw);
 	}
 	return KH_RET_UPDATE;
 }
@@ -202,14 +209,18 @@ int catchup_feed(struct mainwindow *mw){
 		restyle_focus_item(mw,CP_LISTFOCUS);
 	}
 	else{
-		catchup_entries(mw,mw->ctx_id);
+		if(catchup_entries(mw,mw->ctx_id))
+			view_to_feeds(mw);
 	}
 	return KH_RET_UPDATE;
 }
 
 int toggle_read(struct mainwindow *mw){
 	if(mw->ctx_type==CTX_ENTRIES){
-		toggle_read_ipc(mw,mw->data.lv[cursor_i].id);
+		if(toggle_read_ipc(mw,mw->data.lv[cursor_i].id)){
+			view_to_feeds(mw);
+			return KH_RET_UPDATE;
+		}
 		restyle_focus_item(mw,CP_LISTFOCUS);
 		if(mw->ctx_id==0 || !global_config.show_read_entries)
 			return KH_RET_UPDATE;
@@ -218,7 +229,8 @@ int toggle_read(struct mainwindow *mw){
 }
 
 int catchup_all(struct mainwindow *mw){
-	catchup_entries(mw,0);
+	if(catchup_entries(mw,0))
+		view_to_feeds(mw);
 	return KH_RET_UPDATE;
 }
 
