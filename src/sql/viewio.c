@@ -239,9 +239,13 @@ static void set_title_string(struct mainwindow *mw, char *tail, sqlite3 *db){
 	if(mw->ctx_type==CTX_FEEDS)
 		head="Your Feeds";
 	else if(mw->ctx_type==CTX_ENTRIES){
-		nb_qnprintf(tmp,tlen,"SELECT Title FROM Feed WHERE FeedID=%d",mw->ctx_id);
-		nb_sqlite3_exec(db,tmp,set_string_cb,&ssa,NULL);
-		head=shead;
+		if(mw->ctx_id==0)
+			head="Unread Articles";
+		else{
+			nb_qnprintf(tmp,tlen,"SELECT Title FROM Feed WHERE FeedID=%d",mw->ctx_id);
+			nb_sqlite3_exec(db,tmp,set_string_cb,&ssa,NULL);
+			head=shead;
+		}
 	}
 
 	snprintf(tmp,tlen,"%s %s",head,tail);
